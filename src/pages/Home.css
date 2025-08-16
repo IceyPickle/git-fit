@@ -1,0 +1,99 @@
+/* src/pages/Home.css */
+
+.home { display: flex; flex-direction: column; gap: 40px; }
+
+/* HERO
+   We stack a gradient + the image together in one background image.
+*/
+.hero {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  min-height: 260px;
+
+  background:
+    linear-gradient(to top, rgba(11, 11, 15, 0.85), rgba(11, 11, 15, 0.25)),
+    url("/hero-gym.jpg") center/cover no-repeat;
+}
+
+.hero-content {
+  position: relative;
+  padding: 32px 24px 40px;
+  max-width: 900px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+
+.hero p {
+  margin: 10px 0 0 0;
+  color: var(--text-dim);
+  max-width: 700px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #15161c;
+  color: var(--text);
+  font-weight: 600;
+  transition: transform 100ms ease, background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.btn:hover { background: #1a1b21; transform: translateY(-1px); }
+
+.btn.primary {
+  background: var(--brand);
+  color: #0b0b0f;
+  border-color: transparent;
+}
+.btn.primary:hover { filter: brightness(1.05); }
+
+/* QUICK LINKS */
+.quicklinks h2 {
+  font-size: 20px;
+  margin: 0 0 12px 0;
+}
+
+.cards {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .cards { grid-template-columns: repeat(4, 1fr); } }
+
+.card-link {
+  display: block;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #0f1015;
+  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+}
+
+.card-link:hover {
+  background: #14151b;
+  border-color: #2a2b33;
+  transform: translateY(-1px);
+}
+
+.card-title { font-weight: 700; }
+.card-desc { margin-top: 4px; font-size: 14px; color: var(--text-dim); }
