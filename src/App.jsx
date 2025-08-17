@@ -9,15 +9,17 @@ import Profile from "./pages/Profile";
 import Categories from "./pages/Categories";
 import Regimen from "./pages/Regimen";
 
-import { AuthProvider } from "./context/AuthContext";
+import AuthProvider from "./context/AuthProvider";   // ✅ fixed
 import { useAuth } from "./hooks/useAuth";
 import "./App.css";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+
   if (loading) return <div className="container">Loading…</div>;
   if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
+
   return children;
 }
 
