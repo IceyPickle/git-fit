@@ -1,4 +1,5 @@
 /* src/pages/Login.css */
+
 .auth-wrap {
   position: relative;
   min-height: clamp(500px, 70vh, 760px);
@@ -6,6 +7,7 @@
   place-items: center;
 }
 
+/* Close (X) */
 .auth-close {
   position: absolute;
   right: 16px;
@@ -23,6 +25,7 @@
 }
 .auth-close:hover { background: #171821; transform: scale(1.05); }
 
+/* Card */
 .auth-card {
   width: 100%;
   max-width: 480px;
@@ -41,6 +44,7 @@
 }
 .auth-sub { margin: 6px 0 0; color: var(--text-dim); }
 
+/* Form */
 .auth-form {
   display: grid;
   gap: 10px;
@@ -60,13 +64,21 @@
   background: #101118;
   color: var(--text);
   outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
 }
 .auth-form input:focus {
   border-color: #2f3140;
   box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15); /* brand glow */
 }
 
+/* Validation / error UI */
+.field-error {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #ff9aa2; /* soft red */
+}
+
+/* Actions */
 .auth-actions {
   display: flex;
   gap: 10px;
@@ -96,6 +108,13 @@
 }
 .btn.primary:hover { filter: brightness(1.05); transform: translateY(-2px) scale(1.03); }
 
+.btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Meta row */
 .auth-meta {
   margin-top: 14px;
   display: flex;
@@ -103,7 +122,12 @@
   align-items: center;
 }
 
-.checkbox { display: inline-flex; gap: 8px; align-items: center; color: var(--text-dim); }
+.checkbox {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--text-dim);
+}
 
 .link {
   background: transparent;
