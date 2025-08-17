@@ -1,5 +1,5 @@
 // src/App.jsx
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
@@ -9,25 +9,22 @@ import Profile from "./pages/Profile";
 import Categories from "./pages/Categories";
 import Regimen from "./pages/Regimen";
 
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import "./App.css";
+import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./hooks/useAuth";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  const location = useLocation();
-  if (loading) return null; // or a spinner
-  if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <Navigate to="/login" />;
   return children;
 }
 
 export default function App() {
   return (
     <AuthProvider>
-      <div className="app">
+      <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
         <Navbar />
-        <main className="container">
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -40,14 +37,7 @@ export default function App() {
               }
             />
             <Route path="/categories" element={<Categories />} />
-            <Route
-              path="/regimen"
-              element={
-                <ProtectedRoute>
-                  <Regimen />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/regimen" element={<Regimen />} />
           </Routes>
         </main>
         <Footer />

@@ -1,21 +1,24 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 
-const AuthContext = createContext(null);
-export const useAuth = () => useContext(AuthContext);
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext(null);
 
 const STORAGE_KEY = "gitfit_user";
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // { email } or null
+  const [user, setUser] = useState(null); // { email } | null
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setUser(JSON.parse(raw));
-    } catch {}
-    setLoading(false);
+    } catch (e) {
+      console.warn("Failed to read stored auth:", e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   function login(email) {

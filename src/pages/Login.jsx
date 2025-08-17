@@ -1,7 +1,6 @@
-// src/pages/Login.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import "./Login.css";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -11,11 +10,10 @@ export default function Login() {
   const location = useLocation();
   const { user, login } = useAuth();
 
-  const [mode, setMode] = useState("login"); // "login" | "signup"
+  const [mode, setMode] = useState("login");
   const [form, setForm] = useState({ email: "", password: "", remember: false });
   const [touched, setTouched] = useState({ email: false, password: false });
 
-  // If already logged in, bounce to profile
   useEffect(() => {
     if (user) navigate("/profile", { replace: true });
   }, [user, navigate]);
@@ -29,7 +27,6 @@ export default function Login() {
     setTouched((t) => ({ ...t, [name]: true }));
   }
 
-  // Validation rules
   const errors = useMemo(() => {
     const out = {};
     if (!emailRegex.test(form.email)) {
@@ -39,10 +36,9 @@ export default function Login() {
       if (form.password.length < 8) {
         out.password = "Password must be at least 8 characters.";
       } else if (!/[0-9]/.test(form.password)) {
-        out.password = "Password must contain at least one number.";
+        out.password = "Password must include at least one number.";
       }
     } else {
-      // login: be a bit looser but still require something
       if (form.password.length < 4) {
         out.password = "Enter your password (min 4 characters).";
       }
@@ -55,26 +51,14 @@ export default function Login() {
   function onSubmit(e) {
     e.preventDefault();
     if (!isValid) return;
-
-    // Fake auth — store just the email (and maybe remember flag later)
     login(form.email);
-
-    // Redirect to the page they came from, or /profile
     const dest = location.state?.from?.pathname || "/profile";
     navigate(dest, { replace: true });
   }
 
   return (
     <div className="auth-wrap">
-      {/* Close (X) */}
-      <button
-        aria-label="Close"
-        className="auth-close"
-        onClick={() => navigate(-1)}
-        title="Close"
-      >
-        ×
-      </button>
+      <button aria-label="Close" className="auth-close" onClick={() => navigate(-1)} title="Close">×</button>
 
       <div className="auth-card">
         <header className="auth-header">
@@ -88,49 +72,28 @@ export default function Login() {
 
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <label htmlFor="email">Email</label>
-          <input
-            id="email" name="email" type="email"
-            placeholder="you@example.com"
-            value={form.email} onChange={onChange} onBlur={onBlur}
-            aria-invalid={!!errors.email}
-          />
-          {touched.email && errors.email && (
-            <div className="field-error">{errors.email}</div>
-          )}
+          <input id="email" name="email" type="email" placeholder="you@example.com"
+                 value={form.email} onChange={onChange} onBlur={onBlur} aria-invalid={!!errors.email} />
+          {touched.email && errors.email && <div className="field-error">{errors.email}</div>}
 
           <label htmlFor="password">Password</label>
-          <input
-            id="password" name="password" type="password"
-            placeholder={mode === "signup" ? "At least 8 chars, include a number" : "Your password"}
-            value={form.password} onChange={onChange} onBlur={onBlur}
-            aria-invalid={!!errors.password}
-          />
-          {touched.password && errors.password && (
-            <div className="field-error">{errors.password}</div>
-          )}
+          <input id="password" name="password" type="password"
+                 placeholder={mode === "signup" ? "At least 8 chars, include a number" : "Your password"}
+                 value={form.password} onChange={onChange} onBlur={onBlur} aria-invalid={!!errors.password} />
+          {touched.password && errors.password && <div className="field-error">{errors.password}</div>}
 
           <div className="auth-actions">
             <button type="submit" className="btn primary" disabled={!isValid}>
               {mode === "login" ? "Login" : "Sign Up"}
             </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            >
+            <button type="button" className="btn" onClick={() => setMode(mode === "login" ? "signup" : "login")}>
               {mode === "login" ? "Switch to Sign Up" : "Switch to Login"}
             </button>
           </div>
 
           <div className="auth-meta">
             <label className="checkbox">
-              <input
-                type="checkbox"
-                name="remember"
-                checked={form.remember}
-                onChange={onChange}
-              />{" "}
-              Remember me
+              <input type="checkbox" name="remember" checked={form.remember} onChange={onChange} /> Remember me
             </label>
             <button className="link" type="button" onClick={() => alert("Coming soon!")}>
               Forgot password?
