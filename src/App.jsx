@@ -1,5 +1,5 @@
 // src/App.jsx
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
@@ -11,20 +11,22 @@ import Regimen from "./pages/Regimen";
 
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
+import "./App.css";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <Navigate to="/login" />;
+  const location = useLocation();
+  if (loading) return <div className="container">Loading…</div>;
+  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
   return children;
 }
 
 export default function App() {
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
+      <div className="app">
         <Navbar />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+        <main className="container">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -37,7 +39,16 @@ export default function App() {
               }
             />
             <Route path="/categories" element={<Categories />} />
-            <Route path="/regimen" element={<Regimen />} />
+            <Route
+              path="/regimen"
+              element={
+                <ProtectedRoute>
+                  <Regimen />
+                </ProtectedRoute>
+              }
+            />
+            {/* optional catch-all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         <Footer />
