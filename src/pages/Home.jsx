@@ -13,20 +13,40 @@ export default function Home() {
             Git Fit helps you log workouts, choose training splits, and keep notes—everything in one place.
           </p>
           <div className="hero-actions">
-            <Link to="/login" className="btn primary">Keep Track of Your Progress</Link>
-            <Link to="/categories" className="btn">Explore Workouts</Link>
+            <Link to="/login" className="btn primary">
+              Keep Track of Your Progress
+            </Link>
+            <Link to="/categories" className="btn">
+              Explore Workouts
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Quick links */}
-      <section className="quicklinks container">
+      <section className="quicklinks">
         <h2>Jump to a section</h2>
         <div className="cards">
-          <CardLink title="My Profile" desc="Calendar, notes, favorites" to="/profile" />
-          <CardLink title="Categories" desc="Abs, legs, chest, back, more" to="/categories" />
-          <CardLink title="Regimen" desc="Push/Pull/Legs or custom splits" to="/regimen" />
-          <CardLink title="Login / Sign Up" desc="Save your progress" to="/login" />
+          <CardLink
+            title="My Profile"
+            desc="Calendar, notes, favorites"
+            to="/profile"
+          />
+          <CardLink
+            title="Categories"
+            desc="Abs, legs, chest, back, more"
+            to="/categories"
+          />
+          <CardLink
+            title="Regimen"
+            desc="Push/Pull/Legs or custom splits"
+            to="/regimen"
+          />
+          <CardLink
+            title="Login / Sign Up"
+            desc="Save your progress"
+            to="/login"
+          />
         </div>
       </section>
     </div>

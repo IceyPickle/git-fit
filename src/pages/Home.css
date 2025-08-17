@@ -1,6 +1,10 @@
 /* src/pages/Home.css */
 
-.home { display: flex; flex-direction: column; gap: 40px; }
+.home { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 40px; 
+}
 
 /* HERO
    We stack a gradient + the image together in one background image.
@@ -43,6 +47,7 @@
   flex-wrap: wrap;
 }
 
+/* BUTTONS */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -53,17 +58,25 @@
   background: #15161c;
   color: var(--text);
   font-weight: 600;
-  transition: transform 100ms ease, background 120ms ease, border-color 120ms ease, color 120ms ease;
+  cursor: pointer;
+  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
-.btn:hover { background: #1a1b21; transform: translateY(-1px); }
+.btn:hover { 
+  background: #1a1b21; 
+  transform: translateY(-2px) scale(1.02); 
+}
 
 .btn.primary {
   background: var(--brand);
   color: #0b0b0f;
   border-color: transparent;
 }
-.btn.primary:hover { filter: brightness(1.05); }
+
+.btn.primary:hover { 
+  filter: brightness(1.05); 
+  transform: translateY(-2px) scale(1.05);
+}
 
 /* QUICK LINKS */
 .quicklinks h2 {
@@ -86,13 +99,13 @@
   border-radius: 14px;
   border: 1px solid var(--border);
   background: #0f1015;
-  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+  transition: background 150ms ease, border-color 150ms ease, transform 120ms ease;
 }
 
 .card-link:hover {
   background: #14151b;
   border-color: #2a2b33;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .card-title { font-weight: 700; }

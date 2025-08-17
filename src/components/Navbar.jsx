@@ -8,10 +8,13 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <div className="nav-inner container">
+        {/* Brand */}
         <NavLink to="/" className="brand">
           <span className="dot" />
           <span className="brand-name">Git Fit</span>
         </NavLink>
+
+        {/* Links */}
         <nav className="links">
           <NavLink to="/" end className={cls}>Home</NavLink>
           <NavLink to="/profile" className={cls}>My Profile</NavLink>

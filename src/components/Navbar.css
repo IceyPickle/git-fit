@@ -32,22 +32,25 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .nav-link {
   padding: 8px 12px;
   border-radius: 8px;
   color: var(--text-dim);
-  transition: background 120ms ease, color 120ms ease;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 100ms ease;
+  border: 1px solid transparent;
 }
 
 .nav-link:hover {
   background: #1a1b20;
   color: var(--text);
+  transform: translateY(-1px);
 }
 
 .nav-link.active {
   background: #0f1015;
   color: var(--text);
-  border: 1px solid var(--border);
+  border-color: var(--border);
 }
