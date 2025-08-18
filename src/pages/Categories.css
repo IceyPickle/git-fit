@@ -1,0 +1,28 @@
+/* src/pages/Categories.css */
+.categories { display: grid; gap: 12px; }
+.categories h1 { margin: 0; }
+.sub { color: var(--text-dim); }
+
+.cat-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+@media (min-width: 640px) { .cat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .cat-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.cat-card {
+  display: block;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+.cat-card:hover {
+  transform: translateY(-2px);
+  background: #14151b;
+  border-color: #2a2b33;
+}
+.cat-title { font-weight: 800; }
+.cat-desc { margin-top: 4px; color: var(--text-dim); font-size: 14px; }
