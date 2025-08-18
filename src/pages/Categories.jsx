@@ -1,4 +1,5 @@
-// src/pages/Categories.jsx
+/* src/pages/Categories.jsx */
+
 export default function Categories() {
   return (
     <div>

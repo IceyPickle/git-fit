@@ -1,4 +1,5 @@
-// src/context/AuthProvider.jsx
+/* src/context/AuthProvider.jsx */
+
 import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
 

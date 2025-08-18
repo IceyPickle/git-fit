@@ -1,4 +1,5 @@
-// src/components/Footer.jsx
+/* src/components/Footer.jsx */
+
 import "./Footer.css";
 
 export default function Footer() {

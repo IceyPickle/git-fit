@@ -1,4 +1,5 @@
-// src/pages/Profile.jsx
+/* src/pages/Profile.jsx */
+
 export default function Profile() {
   return (
     <div>
