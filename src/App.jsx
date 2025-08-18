@@ -5,21 +5,20 @@ import Footer from "./components/Footer";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";      // ✅ add this
 import Profile from "./pages/Profile";
 import Categories from "./pages/Categories";
 import Regimen from "./pages/Regimen";
 
-import AuthProvider from "./context/AuthProvider";   // ✅ fixed
+import AuthProvider from "./context/AuthProvider";
 import { useAuth } from "./hooks/useAuth";
 import "./App.css";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-
   if (loading) return <div className="container">Loading…</div>;
   if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
-
   return children;
 }
 
@@ -32,6 +31,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />  {/* ✅ new */}
             <Route
               path="/profile"
               element={
@@ -49,7 +49,6 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            {/* optional catch-all */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

@@ -1,6 +1,7 @@
 // src/context/AuthContext.jsx
 import { createContext, useEffect, useState } from "react";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext(null);
 
 const STORAGE_KEY = "gitfit_user";

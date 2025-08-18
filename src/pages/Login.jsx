@@ -1,5 +1,6 @@
+// src/pages/Login.jsx
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import "./Login.css";
 
@@ -10,10 +11,17 @@ export default function Login() {
   const location = useLocation();
   const { user, login } = useAuth();
 
-  const [mode, setMode] = useState("login");
-  const [form, setForm] = useState({ email: "", password: "", remember: false });
-  const [touched, setTouched] = useState({ email: false, password: false });
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    remember: false,
+  });
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false,
+  });
 
+  // If already logged in, go to profile
   useEffect(() => {
     if (user) navigate("/profile", { replace: true });
   }, [user, navigate]);
@@ -22,80 +30,112 @@ export default function Login() {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   }
+
   function onBlur(e) {
     const { name } = e.target;
     setTouched((t) => ({ ...t, [name]: true }));
   }
 
+  // Basic validation
   const errors = useMemo(() => {
     const out = {};
     if (!emailRegex.test(form.email)) {
       out.email = "Enter a valid email address (e.g. you@example.com).";
     }
-    if (mode === "signup") {
-      if (form.password.length < 8) {
-        out.password = "Password must be at least 8 characters.";
-      } else if (!/[0-9]/.test(form.password)) {
-        out.password = "Password must include at least one number.";
-      }
-    } else {
-      if (form.password.length < 4) {
-        out.password = "Enter your password (min 4 characters).";
-      }
+    if (form.password.length < 4) {
+      out.password = "Enter your password (min 4 characters).";
     }
     return out;
-  }, [form.email, form.password, mode]);
+  }, [form.email, form.password]);
 
   const isValid = Object.keys(errors).length === 0;
 
   function onSubmit(e) {
     e.preventDefault();
     if (!isValid) return;
+
+    // Fake auth: store email (AuthProvider persists to localStorage)
     login(form.email);
+
+    // Redirect to where the user tried to go, or /profile
     const dest = location.state?.from?.pathname || "/profile";
     navigate(dest, { replace: true });
   }
 
   return (
     <div className="auth-wrap">
-      <button aria-label="Close" className="auth-close" onClick={() => navigate(-1)} title="Close">×</button>
+      {/* Close (X) */}
+      <button
+        aria-label="Close"
+        className="auth-close"
+        onClick={() => navigate(-1)}
+        title="Close"
+      >
+        ×
+      </button>
 
       <div className="auth-card">
         <header className="auth-header">
           <h1>Keep Track of Your Progress</h1>
-          <p className="auth-sub">
-            {mode === "login"
-              ? "Log in to access your workouts, notes, and regimen."
-              : "Create an account to save your workouts and progress."}
-          </p>
+          <p className="auth-sub">Log in to access your workouts, notes, and regimen.</p>
         </header>
 
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" placeholder="you@example.com"
-                 value={form.email} onChange={onChange} onBlur={onBlur} aria-invalid={!!errors.email} />
-          {touched.email && errors.email && <div className="field-error">{errors.email}</div>}
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            value={form.email}
+            onChange={onChange}
+            onBlur={onBlur}
+            aria-invalid={!!errors.email}
+          />
+          {touched.email && errors.email && (
+            <div className="field-error">{errors.email}</div>
+          )}
 
           <label htmlFor="password">Password</label>
-          <input id="password" name="password" type="password"
-                 placeholder={mode === "signup" ? "At least 8 chars, include a number" : "Your password"}
-                 value={form.password} onChange={onChange} onBlur={onBlur} aria-invalid={!!errors.password} />
-          {touched.password && errors.password && <div className="field-error">{errors.password}</div>}
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Your password"
+            value={form.password}
+            onChange={onChange}
+            onBlur={onBlur}
+            aria-invalid={!!errors.password}
+          />
+          {touched.password && errors.password && (
+            <div className="field-error">{errors.password}</div>
+          )}
 
           <div className="auth-actions">
             <button type="submit" className="btn primary" disabled={!isValid}>
-              {mode === "login" ? "Login" : "Sign Up"}
+              Log In
             </button>
-            <button type="button" className="btn" onClick={() => setMode(mode === "login" ? "signup" : "login")}>
-              {mode === "login" ? "Switch to Sign Up" : "Switch to Login"}
-            </button>
+            <Link to="/signup" className="btn">
+              Need an account?
+            </Link>
           </div>
 
           <div className="auth-meta">
             <label className="checkbox">
-              <input type="checkbox" name="remember" checked={form.remember} onChange={onChange} /> Remember me
+              <input
+                type="checkbox"
+                name="remember"
+                checked={form.remember}
+                onChange={onChange}
+              />{" "}
+              Remember me
             </label>
-            <button className="link" type="button" onClick={() => alert("Coming soon!")}>
+
+            <button
+              className="link"
+              type="button"
+              onClick={() => alert("Forgot password coming soon!")}
+            >
               Forgot password?
             </button>
           </div>
