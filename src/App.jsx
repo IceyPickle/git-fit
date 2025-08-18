@@ -6,7 +6,8 @@ import Footer from "./components/Footer";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";      // ✅ add this
+import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 import Profile from "./pages/Profile";
 import Categories from "./pages/Categories";
 import Regimen from "./pages/Regimen";
@@ -18,8 +19,10 @@ import "./App.css";
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+
   if (loading) return <div className="container">Loading…</div>;
   if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
+
   return children;
 }
 
@@ -30,9 +33,13 @@ export default function App() {
         <Navbar />
         <main className="container">
           <Routes>
+            {/* Public */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />  {/* ✅ new */}
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+
+            {/* Protected */}
             <Route
               path="/profile"
               element={
@@ -41,7 +48,6 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/categories" element={<Categories />} />
             <Route
               path="/regimen"
               element={
@@ -50,6 +56,8 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* Catch-all */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

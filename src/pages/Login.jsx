@@ -22,7 +22,6 @@ export default function Login() {
     password: false,
   });
 
-  // If already logged in, go to profile
   useEffect(() => {
     if (user) navigate("/profile", { replace: true });
   }, [user, navigate]);
@@ -37,7 +36,6 @@ export default function Login() {
     setTouched((t) => ({ ...t, [name]: true }));
   }
 
-  // Basic validation
   const errors = useMemo(() => {
     const out = {};
     if (!emailRegex.test(form.email)) {
@@ -54,18 +52,13 @@ export default function Login() {
   function onSubmit(e) {
     e.preventDefault();
     if (!isValid) return;
-
-    // Fake auth: store email (AuthProvider persists to localStorage)
     login(form.email);
-
-    // Redirect to where the user tried to go, or /profile
     const dest = location.state?.from?.pathname || "/profile";
     navigate(dest, { replace: true });
   }
 
   return (
     <div className="auth-wrap">
-      {/* Close (X) */}
       <button
         aria-label="Close"
         className="auth-close"
@@ -84,41 +77,23 @@ export default function Login() {
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <label htmlFor="email">Email</label>
           <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            value={form.email}
-            onChange={onChange}
-            onBlur={onBlur}
-            aria-invalid={!!errors.email}
+            id="email" name="email" type="email" placeholder="you@example.com"
+            value={form.email} onChange={onChange} onBlur={onBlur} aria-invalid={!!errors.email}
           />
-          {touched.email && errors.email && (
-            <div className="field-error">{errors.email}</div>
-          )}
+          {touched.email && errors.email && <div className="field-error">{errors.email}</div>}
 
           <label htmlFor="password">Password</label>
           <input
-            id="password"
-            name="password"
-            type="password"
-            placeholder="Your password"
-            value={form.password}
-            onChange={onChange}
-            onBlur={onBlur}
-            aria-invalid={!!errors.password}
+            id="password" name="password" type="password" placeholder="Your password"
+            value={form.password} onChange={onChange} onBlur={onBlur} aria-invalid={!!errors.password}
           />
-          {touched.password && errors.password && (
-            <div className="field-error">{errors.password}</div>
-          )}
+          {touched.password && errors.password && <div className="field-error">{errors.password}</div>}
 
           <div className="auth-actions">
             <button type="submit" className="btn primary" disabled={!isValid}>
               Log In
             </button>
-            <Link to="/signup" className="btn">
-              Need an account?
-            </Link>
+            <Link to="/signup" className="btn">Need an account?</Link>
           </div>
 
           <div className="auth-meta">
@@ -132,13 +107,10 @@ export default function Login() {
               Remember me
             </label>
 
-            <button
-              className="link"
-              type="button"
-              onClick={() => alert("Forgot password coming soon!")}
-            >
+            {/* ← updated to navigate to the new page */}
+            <Link to="/forgot-password" className="link">
               Forgot password?
-            </button>
+            </Link>
           </div>
         </form>
       </div>
