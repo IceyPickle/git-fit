@@ -1,4 +1,4 @@
-/* src/pages/Profile.jsx */
+/* src/pages/jsx/Profile.jsx */
 
 import "../css/Profile.css";
 

@@ -1,4 +1,4 @@
-/* src/pages/ForgotPassword.jsx */
+/* src/pages/jsx/ForgotPassword.jsx */
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";

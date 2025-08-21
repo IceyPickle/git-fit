@@ -1,4 +1,4 @@
-/* src/pages/Regimen.jsx */
+/* src/pages/jsx/Regimen.jsx */
 
 import "../css/Regimen.css";
 

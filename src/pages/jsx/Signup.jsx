@@ -1,4 +1,4 @@
-/* src/pages/Signup.jsx */
+/* src/pages/jsx/Signup.jsx */
 
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";

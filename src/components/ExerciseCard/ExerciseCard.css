@@ -1,0 +1,64 @@
+/* src/components/ExerciseCard.css */
+
+.exercise-card {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+.exercise-card:hover {
+  transform: translateY(-2px);
+  background: #14151b;
+  border-color: #2a2b33;
+}
+
+.exercise-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.exercise-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  flex: 1;
+}
+
+.diff-badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #101118;
+}
+.diff-beginner { color: #8be1a6; }
+.diff-intermediate { color: #f6d36a; }
+.diff-advanced { color: #f28b82; }
+
+.exercise-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.exercise-desc { margin: 4px 0 0; color: var(--text); font-size: 14px; }
+
+.exercise-actions { margin-top: 4px; }
+.exercise-actions .btn {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0f1015;
+  color: var(--text);
+  text-decoration: none;
+}
+.exercise-actions .btn:hover {
+  background: #15161c;
+  border-color: #2a2b33;
+}

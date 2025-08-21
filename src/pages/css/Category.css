@@ -1,0 +1,47 @@
+/* src/pages/css/Category.css */
+
+.category-page { display: grid; gap: 16px; }
+
+.cat-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cat-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.input, .select {
+  background: #101118;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 10px;
+  outline: none;
+}
+.input:focus, .select:focus {
+  border-color: #2f3140;
+  box-shadow: 0 0 0 3px rgba(52,211,153,0.15);
+}
+
+.exercise-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.empty {
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text-dim);
+}
+
+.backlink { margin-top: 8px; }
+.link { color: var(--text-dim); text-decoration: none; }
+.link:hover { color: var(--text); }

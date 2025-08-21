@@ -1,4 +1,4 @@
-// src/App.jsx
+/* src/App.jsx */
 
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar/Navbar";
@@ -11,6 +11,7 @@ import ForgotPassword from "./pages/jsx/ForgotPassword";
 import Profile from "./pages/jsx/Profile";
 import Categories from "./pages/jsx/Categories";
 import Regimen from "./pages/jsx/Regimen";
+import Category from "./pages/jsx/Category"
 
 import AuthProvider from "./context/AuthProvider";
 import { useAuth } from "./hooks/useAuth";
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/categories" element={<Categories />} />
+            <Route path="/categories/:slug" element={<Category />} />
 
             {/* Protected */}
             <Route

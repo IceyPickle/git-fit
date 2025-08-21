@@ -1,4 +1,4 @@
-/* src/pages/Categories.jsx */
+/* src/pages/jsx/Categories.jsx */
 
 import { Link } from "react-router-dom";
 import "../css/Categories.css";
@@ -22,9 +22,9 @@ export default function Categories() {
 
       <div className="cat-grid">
         {groups.map((g) => (
-          <Link key={g.name} to={g.to} className="cat-card">
+          <Link key={g.to} to={g.to} className="cat-card">
             <div className="cat-title">{g.name}</div>
-            <div className="cat-desc">~10+ exercises • demos</div>
+            <div className="cat-desc">Exercises • Demos</div>
           </Link>
         ))}
       </div>
