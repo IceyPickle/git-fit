@@ -1,7 +1,7 @@
 /* src/pages/Home.jsx */
 
 import { Link } from "react-router-dom";
-import "./Home.css";
+import "../css/Home.css";
 
 export default function Home() {
   return (
@@ -11,7 +11,8 @@ export default function Home() {
         <div className="hero-content">
           <h1>Build Strength. Track Progress. Stay Consistent.</h1>
           <p>
-            Git Fit helps you log workouts, choose training splits, and keep notes—everything in one place.
+            Git Fit helps you log workouts, choose training splits, and keep
+            notes—everything in one place.
           </p>
           <div className="hero-actions">
             <Link to="/login" className="btn primary">
@@ -28,26 +29,10 @@ export default function Home() {
       <section className="quicklinks">
         <h2>Jump to a section</h2>
         <div className="cards">
-          <CardLink
-            title="My Profile"
-            desc="Calendar, notes, favorites"
-            to="/profile"
-          />
-          <CardLink
-            title="Categories"
-            desc="Abs, legs, chest, back, more"
-            to="/categories"
-          />
-          <CardLink
-            title="Regimen"
-            desc="Push/Pull/Legs or custom splits"
-            to="/regimen"
-          />
-          <CardLink
-            title="Login / Sign Up"
-            desc="Save your progress"
-            to="/login"
-          />
+          <CardLink title="My Profile" desc="Calendar, notes, favorites" to="/profile" />
+          <CardLink title="Categories" desc="Abs, legs, chest, back, more" to="/categories" />
+          <CardLink title="Regimen" desc="Push/Pull/Legs or custom splits" to="/regimen" />
+          <CardLink title="Login / Sign Up" desc="Save your progress" to="/login" />
         </div>
       </section>
     </div>

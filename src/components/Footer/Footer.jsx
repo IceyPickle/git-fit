@@ -1,11 +1,11 @@
-/* src/components/Footer.jsx */
+// src/components/Footer/Footer.jsx
 
 import "./Footer.css";
 
 export default function Footer() {
   return (
     <footer className="footer">
-      © {new Date().getFullYear()} Git Fit
+      <p>© {new Date().getFullYear()} Git Fit. All rights reserved.</p>
     </footer>
   );
 }

@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
-import { upsertUser } from "../utils/users";
-import "./Login.css"; // reuse same styles
+import { useAuth } from "../../hooks/useAuth";
+import { upsertUser } from "../../utils/users";
+import "../css/Login.css";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -14,17 +14,10 @@ export default function Signup() {
   const { login } = useAuth();
 
   const [form, setForm] = useState({
-    email: "",
-    password: "",
-    confirm: "",
-    dob: "",
-    remember: false,
+    email: "", password: "", confirm: "", dob: "", remember: false,
   });
   const [touched, setTouched] = useState({
-    email: false,
-    password: false,
-    confirm: false,
-    dob: false,
+    email: false, password: false, confirm: false, dob: false,
   });
 
   function onChange(e) {
@@ -38,8 +31,7 @@ export default function Signup() {
 
   function calculateAge(dob) {
     if (!dob) return 0;
-    const d = new Date(dob);
-    const t = new Date();
+    const d = new Date(dob), t = new Date();
     let age = t.getFullYear() - d.getFullYear();
     const m = t.getMonth() - d.getMonth();
     if (m < 0 || (m === 0 && t.getDate() < d.getDate())) age--;
@@ -48,23 +40,13 @@ export default function Signup() {
 
   const errors = useMemo(() => {
     const out = {};
-    if (!emailRegex.test(form.email)) {
-      out.email = "Enter a valid email address (e.g. you@example.com).";
-    }
-    if (form.password.length < 8) {
-      out.password = "Password must be at least 8 characters.";
-    } else if (!/[0-9]/.test(form.password)) {
-      out.password = "Password must include at least one number.";
-    }
-    if (form.confirm !== form.password) {
-      out.confirm = "Passwords do not match.";
-    }
+    if (!emailRegex.test(form.email)) out.email = "Enter a valid email (e.g. you@example.com).";
+    if (form.password.length < 8) out.password = "Password must be at least 8 characters.";
+    else if (!/[0-9]/.test(form.password)) out.password = "Password must include at least one number.";
+    if (form.confirm !== form.password) out.confirm = "Passwords do not match.";
     const age = calculateAge(form.dob);
-    if (!form.dob) {
-      out.dob = "Please enter your date of birth.";
-    } else if (age < 13) {
-      out.dob = "You must be at least 13 years old to sign up.";
-    }
+    if (!form.dob) out.dob = "Please enter your date of birth.";
+    else if (age < 13) out.dob = "You must be at least 13 years old to sign up.";
     return out;
   }, [form.email, form.password, form.confirm, form.dob]);
 
@@ -74,11 +56,8 @@ export default function Signup() {
     e.preventDefault();
     if (!isValid) return;
 
-    // Save minimal user record (email + dob) so we can verify at reset time
-    upsertUser({ email: form.email, dob: form.dob });
-
-    // Fake signup -> immediately log in
-    login(form.email);
+    upsertUser({ email: form.email, dob: form.dob }); // store minimal record
+    login(form.email); // fake login
 
     const dest = location.state?.from?.pathname || "/profile";
     navigate(dest, { replace: true });
@@ -122,7 +101,8 @@ export default function Signup() {
 
           <div className="auth-meta">
             <label className="checkbox">
-              <input type="checkbox" name="remember" checked={form.remember} onChange={onChange} /> Remember me
+              <input type="checkbox" name="remember" checked={form.remember} onChange={onChange} />{" "}
+              Remember me
             </label>
           </div>
         </form>

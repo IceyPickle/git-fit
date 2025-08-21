@@ -1,4 +1,5 @@
 /* src/pages/Categories.css */
+
 .categories { display: grid; gap: 12px; }
 .categories h1 { margin: 0; }
 .sub { color: var(--text-dim); }

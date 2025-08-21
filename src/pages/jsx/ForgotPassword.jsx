@@ -1,29 +1,25 @@
-/* src/pages/ForgetPassword.jsx */
+/* src/pages/ForgotPassword.jsx */
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { findUser, setPassword } from "../utils/users";
-import "./Login.css"; // reuse the auth styles
+import { findUser, setPassword } from "../../utils/users";
+import "../css/Login.css";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
 
-  // Step 1: verify identity (email + DOB)
   const [email, setEmail] = useState("");
   const [dob, setDob] = useState("");
   const [verifyTouched, setVerifyTouched] = useState({ email: false, dob: false });
   const [verifyError, setVerifyError] = useState("");
 
-  // Step 2: set new password
   const [step, setStep] = useState(1);
   const [newPassword, setNewPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [resetTouched, setResetTouched] = useState({ password: false, confirm: false });
-  const [resetError, setResetError] = useState("");
 
-  // Validation helpers
   function verifyErrors() {
     const out = {};
     if (!emailRegex.test(email)) out.email = "Enter a valid email address.";
@@ -33,18 +29,12 @@ export default function ForgotPassword() {
 
   function resetErrors() {
     const out = {};
-    if (newPassword.length < 8) {
-      out.password = "Password must be at least 8 characters.";
-    } else if (!/[0-9]/.test(newPassword)) {
-      out.password = "Password must include at least one number.";
-    }
-    if (confirm !== newPassword) {
-      out.confirm = "Passwords do not match.";
-    }
+    if (newPassword.length < 8) out.password = "Password must be at least 8 characters.";
+    else if (!/[0-9]/.test(newPassword)) out.password = "Password must include at least one number.";
+    if (confirm !== newPassword) out.confirm = "Passwords do not match.";
     return out;
   }
 
-  // Handlers
   function handleVerify(e) {
     e.preventDefault();
     setVerifyError("");
@@ -63,7 +53,6 @@ export default function ForgotPassword() {
 
   function handleReset(e) {
     e.preventDefault();
-    setResetError("");
     const errs = resetErrors();
     if (Object.keys(errs).length) {
       setResetTouched({ password: true, confirm: true });
@@ -76,15 +65,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="auth-wrap">
-      <button
-        aria-label="Close"
-        className="auth-close"
-        onClick={() => navigate(-1)}
-        title="Close"
-      >
-        ×
-      </button>
-
+      <button aria-label="Close" className="auth-close" onClick={() => navigate(-1)} title="Close">×</button>
       <div className="auth-card">
         {step === 1 ? (
           <>
@@ -95,28 +76,16 @@ export default function ForgotPassword() {
 
             <form className="auth-form" onSubmit={handleVerify} noValidate>
               <label htmlFor="email">Email</label>
-              <input
-                id="email" name="email" type="email" placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onBlur={() => setVerifyTouched((t) => ({ ...t, email: true }))}
-                aria-invalid={!!verifyErrors().email}
-              />
-              {verifyTouched.email && verifyErrors().email && (
-                <div className="field-error">{verifyErrors().email}</div>
-              )}
+              <input id="email" name="email" type="email" placeholder="you@example.com"
+                     value={email} onChange={(e) => setEmail(e.target.value)}
+                     onBlur={() => setVerifyTouched((t) => ({ ...t, email: true }))} />
+              {verifyTouched.email && verifyErrors().email && <div className="field-error">{verifyErrors().email}</div>}
 
               <label htmlFor="dob">Date of Birth</label>
-              <input
-                id="dob" name="dob" type="date"
-                value={dob}
-                onChange={(e) => setDob(e.target.value)}
-                onBlur={() => setVerifyTouched((t) => ({ ...t, dob: true }))}
-                aria-invalid={!!verifyErrors().dob}
-              />
-              {verifyTouched.dob && verifyErrors().dob && (
-                <div className="field-error">{verifyErrors().dob}</div>
-              )}
+              <input id="dob" name="dob" type="date"
+                     value={dob} onChange={(e) => setDob(e.target.value)}
+                     onBlur={() => setVerifyTouched((t) => ({ ...t, dob: true }))} />
+              {verifyTouched.dob && verifyErrors().dob && <div className="field-error">{verifyErrors().dob}</div>}
 
               {verifyError && <div className="field-error" style={{ marginTop: 8 }}>{verifyError}</div>}
 
@@ -134,32 +103,16 @@ export default function ForgotPassword() {
 
             <form className="auth-form" onSubmit={handleReset} noValidate>
               <label htmlFor="newPassword">New Password</label>
-              <input
-                id="newPassword" name="newPassword" type="password"
-                placeholder="At least 8 chars, include a number"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                onBlur={() => setResetTouched((t) => ({ ...t, password: true }))}
-                aria-invalid={!!resetErrors().password}
-              />
-              {resetTouched.password && resetErrors().password && (
-                <div className="field-error">{resetErrors().password}</div>
-              )}
+              <input id="newPassword" name="newPassword" type="password" placeholder="At least 8 chars, include a number"
+                     value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                     onBlur={() => setResetTouched((t) => ({ ...t, password: true }))} />
+              {resetTouched.password && resetErrors().password && <div className="field-error">{resetErrors().password}</div>}
 
               <label htmlFor="confirm">Confirm New Password</label>
-              <input
-                id="confirm" name="confirm" type="password"
-                placeholder="Re-enter your new password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                onBlur={() => setResetTouched((t) => ({ ...t, confirm: true }))}
-                aria-invalid={!!resetErrors().confirm}
-              />
-              {resetTouched.confirm && resetErrors().confirm && (
-                <div className="field-error">{resetErrors().confirm}</div>
-              )}
-
-              {resetError && <div className="field-error" style={{ marginTop: 8 }}>{resetError}</div>}
+              <input id="confirm" name="confirm" type="password" placeholder="Re-enter your new password"
+                     value={confirm} onChange={(e) => setConfirm(e.target.value)}
+                     onBlur={() => setResetTouched((t) => ({ ...t, confirm: true }))} />
+              {resetTouched.confirm && resetErrors().confirm && <div className="field-error">{resetErrors().confirm}</div>}
 
               <div className="auth-actions">
                 <button type="submit" className="btn primary">Save new password</button>

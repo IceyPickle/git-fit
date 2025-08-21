@@ -1,16 +1,16 @@
-/* src/App.jsx */
+// src/App.jsx
 
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+import Navbar from "./components/Navbar/Navbar";
+import Footer from "./components/Footer/Footer";
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import Profile from "./pages/Profile";
-import Categories from "./pages/Categories";
-import Regimen from "./pages/Regimen";
+import Home from "./pages/jsx/Home";
+import Login from "./pages/jsx/Login";
+import Signup from "./pages/jsx/Signup";
+import ForgotPassword from "./pages/jsx/ForgotPassword";
+import Profile from "./pages/jsx/Profile";
+import Categories from "./pages/jsx/Categories";
+import Regimen from "./pages/jsx/Regimen";
 
 import AuthProvider from "./context/AuthProvider";
 import { useAuth } from "./hooks/useAuth";
