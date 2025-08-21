@@ -1,5 +1,4 @@
-/* src/pages/jsx/Category.jsx */
-
+// src/pages/jsx/Category.jsx
 import { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { CATEGORY_LIST, EXERCISES_BY_CATEGORY } from "../../data/exercises";
@@ -9,9 +8,16 @@ import ExerciseCard from "../../components/ExerciseCard/ExerciseCard";
 
 export default function Category() {
   const { slug } = useParams();
+  const category = useMemo(
+    () => CATEGORY_LIST.find((c) => c.slug === slug) || null,
+    [slug]
+  );
 
-  const category = CATEGORY_LIST.find((c) => c.slug === slug);
-  const allExercises = EXERCISES_BY_CATEGORY[slug] || [];
+  // ✅ Memoize this so it doesn't look like a new array every render
+  const allExercises = useMemo(
+    () => EXERCISES_BY_CATEGORY[slug] ?? [],
+    [slug]
+  );
 
   const [q, setQ] = useState("");
   const [diff, setDiff] = useState("All");
@@ -75,13 +81,13 @@ export default function Category() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="empty">
-          No exercises match your search/filter.
-        </div>
+        <div className="empty">No exercises match your search/filter.</div>
       )}
 
       <div className="backlink">
-        <Link to="/categories" className="link">&larr; Back to Categories</Link>
+        <Link to="/categories" className="link">
+          &larr; Back to Categories
+        </Link>
       </div>
     </div>
   );
