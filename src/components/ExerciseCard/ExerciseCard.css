@@ -62,3 +62,31 @@
   background: #15161c;
   border-color: #2a2b33;
 }
+
+.exercise-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.exercise-title { flex: 1; }
+
+/* Heart button */
+.heart {
+  border: 1px solid var(--border);
+  background: #101118;
+  color: var(--text-dim);
+  border-radius: 10px;
+  width: 36px;
+  height: 32px;
+  line-height: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 120ms ease, transform 100ms ease, color 120ms ease, border-color 120ms ease;
+}
+.heart:hover { background: #15161c; transform: translateY(-1px); }
+.heart.is-fav {
+  color: #f28b82;                     /* a nice pink/red */
+  border-color: #2a2b33;
+  background: #15161c;
+}

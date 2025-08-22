@@ -2,7 +2,7 @@
 
 import "./ExerciseCard.css";
 
-export default function ExerciseCard({ exercise }) {
+export default function ExerciseCard({ exercise, fav = false, onToggleFav }) {
   const { name, difficulty, muscles, equipment, description } = exercise;
   const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     name + " exercise demo"
@@ -12,6 +12,18 @@ export default function ExerciseCard({ exercise }) {
     <div className="exercise-card">
       <div className="exercise-head">
         <h3 className="exercise-title">{name}</h3>
+
+        {/* Heart / favorite */}
+        <button
+          type="button"
+          className={`heart ${fav ? "is-fav" : ""}`}
+          aria-label={fav ? "Remove from favorites" : "Add to favorites"}
+          title={fav ? "Remove from favorites" : "Add to favorites"}
+          onClick={onToggleFav}
+        >
+          {fav ? "♥" : "♡"}
+        </button>
+
         <span className={`diff-badge diff-${difficulty.toLowerCase()}`}>
           {difficulty}
         </span>

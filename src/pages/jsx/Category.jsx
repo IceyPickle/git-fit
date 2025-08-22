@@ -1,10 +1,12 @@
-// src/pages/jsx/Category.jsx
-import { useMemo, useState } from "react";
+/* src/pages/jsx/Category.jsx */
+
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { CATEGORY_LIST, EXERCISES_BY_CATEGORY } from "../../data/exercises";
 import "../../components/ExerciseCard/ExerciseCard.css";
 import "../css/Category.css";
 import ExerciseCard from "../../components/ExerciseCard/ExerciseCard";
+import { getFavorites, toggleFavorite } from "../../utils/favorites";
 
 export default function Category() {
   const { slug } = useParams();
@@ -13,7 +15,6 @@ export default function Category() {
     [slug]
   );
 
-  // ✅ Memoize this so it doesn't look like a new array every render
   const allExercises = useMemo(
     () => EXERCISES_BY_CATEGORY[slug] ?? [],
     [slug]
@@ -21,6 +22,13 @@ export default function Category() {
 
   const [q, setQ] = useState("");
   const [diff, setDiff] = useState("All");
+  const [onlyFavs, setOnlyFavs] = useState(false);
+  const [favKeys, setFavKeys] = useState([]);
+
+  // Load favorites on page load & when slug changes
+  useEffect(() => {
+    setFavKeys(getFavorites());
+  }, [slug]);
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
@@ -30,9 +38,13 @@ export default function Category() {
         ex.name.toLowerCase().includes(ql) ||
         ex.muscles.join(" ").toLowerCase().includes(ql);
       const matchesDiff = diff === "All" || ex.difficulty === diff;
-      return matchesQ && matchesDiff;
+
+      const key = `${slug}:${ex.id}`;
+      const matchesFav = !onlyFavs || favKeys.includes(key);
+
+      return matchesQ && matchesDiff && matchesFav;
     });
-  }, [q, diff, allExercises]);
+  }, [q, diff, onlyFavs, allExercises, favKeys, slug]);
 
   if (!category) {
     return (
@@ -44,6 +56,12 @@ export default function Category() {
       </div>
     );
   }
+
+  const handleToggleFav = (exId) => {
+    const key = `${slug}:${exId}`;
+    const next = toggleFavorite(key);
+    setFavKeys(next);
+  };
 
   return (
     <div className="category-page">
@@ -71,13 +89,30 @@ export default function Category() {
             <option>Intermediate</option>
             <option>Advanced</option>
           </select>
+
+          <label className="checkbox-inline">
+            <input
+              type="checkbox"
+              checked={onlyFavs}
+              onChange={(e) => setOnlyFavs(e.target.checked)}
+            />
+            Show only favorites
+          </label>
         </div>
       </div>
 
       <div className="exercise-grid">
-        {filtered.map((ex) => (
-          <ExerciseCard key={ex.id} exercise={ex} />
-        ))}
+        {filtered.map((ex) => {
+          const fav = favKeys.includes(`${slug}:${ex.id}`);
+          return (
+            <ExerciseCard
+              key={ex.id}
+              exercise={ex}
+              fav={fav}
+              onToggleFav={() => handleToggleFav(ex.id)}
+            />
+          );
+        })}
       </div>
 
       {filtered.length === 0 && (
