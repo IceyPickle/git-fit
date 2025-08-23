@@ -1,30 +1,46 @@
 /* src/pages/jsx/Categories.jsx */
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { CATEGORY_LIST } from "../../data/exercises";
 import "../css/Categories.css";
 
-export default function Categories() {
-  const groups = [
-    { name: "Abs", to: "/categories/abs" },
-    { name: "Legs", to: "/categories/legs" },
-    { name: "Chest", to: "/categories/chest" },
-    { name: "Back", to: "/categories/back" },
-    { name: "Biceps", to: "/categories/biceps" },
-    { name: "Triceps", to: "/categories/triceps" },
-    { name: "Cardio", to: "/categories/cardio" },
-    { name: "Forearms", to: "/categories/forearms" },
-  ];
+function CatThumb({ slug, emoji, alt }) {
+  const [imgOk, setImgOk] = useState(true);
+  const src = `/categories/${slug}.jpg`; // put images in /public/categories/<slug>.jpg
 
+  return (
+    <div className="cat-thumb" aria-label={alt}>
+      {imgOk ? (
+        <img
+          src={src}
+          alt={alt}
+          onError={() => setImgOk(false)}
+          loading="lazy"
+        />
+      ) : (
+        <span className="cat-emoji" role="img" aria-label={alt}>
+          {emoji}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export default function Categories() {
   return (
     <div className="categories">
       <h1>Workout Categories</h1>
       <p className="sub">Pick a muscle group to explore demo workouts.</p>
 
       <div className="cat-grid">
-        {groups.map((g) => (
-          <Link key={g.to} to={g.to} className="cat-card">
-            <div className="cat-title">{g.name}</div>
-            <div className="cat-desc">Exercises • Demos</div>
+        {CATEGORY_LIST.map((g) => (
+          <Link key={g.slug} to={`/categories/${g.slug}`} className="cat-card">
+            <CatThumb slug={g.slug} emoji={g.emoji} alt={g.name} />
+            <div className="cat-text">
+              <div className="cat-title">{g.name}</div>
+              <div className="cat-desc">Exercises • demos</div>
+            </div>
           </Link>
         ))}
       </div>

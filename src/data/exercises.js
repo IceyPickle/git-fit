@@ -2,14 +2,14 @@
 
 // Categories you show on the grid
 export const CATEGORY_LIST = [
-  { slug: "abs", name: "Abs" },
-  { slug: "legs", name: "Legs" },
-  { slug: "chest", name: "Chest" },
-  { slug: "back", name: "Back" },
-  { slug: "biceps", name: "Biceps" },
-  { slug: "triceps", name: "Triceps" },
-  { slug: "cardio", name: "Cardio" },
-  { slug: "forearms", name: "Forearms" },
+  { slug: "abs", name: "Abs", emoji: "💪" },
+  { slug: "legs", name: "Legs", emoji: "🏃" },
+  { slug: "chest", name: "Chest", emoji: "🏋️" },
+  { slug: "back", name: "Back", emoji: "🧱" },
+  { slug: "biceps", name: "Biceps", emoji: "🦾" },
+  { slug: "triceps", name: "Triceps", emoji: "✋" },
+  { slug: "cardio", name: "Cardio", emoji: "❤️" },
+  { slug: "forearms", name: "Forearms", emoji: "✊" },
 ];
 
 // Simple seed data (3–4 per category for now). Add more anytime.
