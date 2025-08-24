@@ -1,24 +1,28 @@
 /* src/components/ExerciseCard.jsx */
 
 import "./ExerciseCard.css";
-import { getTipsForExercise } from "../../utils/tips";
+import { Link } from "react-router-dom";
 
 export default function ExerciseCard({ exercise, fav = false, onToggleFav, slug }) {
-  const { name, difficulty, muscles, equipment, description } = exercise;
+  const { id, name, difficulty, muscles, equipment, description, tips } = exercise;
+
+  // Tip preview (first curated tip)
+  const tipPreview = Array.isArray(tips) && tips.length > 0 ? tips[0] : null;
+
   const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     name + " exercise demo"
   )}`;
 
-  // Tip preview (first line only)
-  const tips = getTipsForExercise(exercise, slug);
-  const tipPreview = Array.isArray(tips) && tips.length > 0 ? tips[0] : null;
-
   return (
     <div className="exercise-card">
+      {/* Make title a link to details */}
       <div className="exercise-head">
-        <h3 className="exercise-title">{name}</h3>
+        <h3 className="exercise-title">
+          <Link to={`/categories/${slug}/${id}`} className="link-plain">
+            {name}
+          </Link>
+        </h3>
 
-        {/* Heart / favorite */}
         <button
           type="button"
           className={`heart ${fav ? "is-fav" : ""}`}
@@ -39,15 +43,13 @@ export default function ExerciseCard({ exercise, fav = false, onToggleFav, slug 
         <span><strong>Equipment:</strong> {equipment}</span>
       </div>
 
-      {/* NEW: tip preview */}
       {tipPreview && <div className="tip-preview">{tipPreview}</div>}
 
       <p className="exercise-desc">{description}</p>
 
       <div className="exercise-actions">
-        <a href={youtubeSearch} target="_blank" rel="noreferrer" className="btn">
-          Watch demo
-        </a>
+        <Link to={`/categories/${slug}/${id}`} className="btn">View details</Link>
+        <a href={youtubeSearch} target="_blank" rel="noreferrer" className="btn">Watch demo</a>
       </div>
     </div>
   );

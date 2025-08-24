@@ -39,7 +39,7 @@ export default function Categories() {
             <CatThumb slug={g.slug} emoji={g.emoji} alt={g.name} />
             <div className="cat-text">
               <div className="cat-title">{g.name}</div>
-              <div className="cat-desc">Exercises • demos</div>
+              <div className="cat-desc">Exercises • Demos</div>
             </div>
           </Link>
         ))}

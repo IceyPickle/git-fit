@@ -3,28 +3,24 @@
 import { useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { CATEGORY_LIST, getExercises } from "../../data/exercises";
-import "../../components/ExerciseCard/ExerciseCard.css"; // reuse card styles (badges, heart, btn)
+import "../../components/ExerciseCard/ExerciseCard.css"; // reuse badges/btn/heart styles
 import "../css/Exercise.css";                              // page-specific styles
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
-import { getTipsForExercise } from "../../utils/tips";
 
 export default function Exercise() {
   const { slug, exerciseId } = useParams();
   const navigate = useNavigate();
 
-  // find the category object by slug
   const category = useMemo(
     () => CATEGORY_LIST.find((c) => c.slug === slug) || null,
     [slug]
   );
 
-  // find the exercise from the (sorted) category list
   const exercise = useMemo(() => {
     const list = getExercises(slug);
     return list.find((e) => e.id === exerciseId) || null;
   }, [slug, exerciseId]);
 
-  // favorites state
   const favKey = `${slug}:${exerciseId}`;
   const [isFav, setIsFav] = useState(getFavorites().includes(favKey));
 
@@ -33,7 +29,8 @@ export default function Exercise() {
       <div className="exercise-page">
         <h1>Not found</h1>
         <p className="sub">
-          Go back to <Link to={slug ? `/categories/${slug}` : "/categories"}>the list</Link>.
+          Go back to{" "}
+          <Link to={slug ? `/categories/${slug}` : "/categories"}>the list</Link>.
         </p>
       </div>
     );
@@ -51,7 +48,9 @@ export default function Exercise() {
   return (
     <div className="exercise-page">
       <div className="exercise-header">
-        <button className="btn back" onClick={() => navigate(-1)}>&larr; Back</button>
+        <button className="btn back" onClick={() => navigate(-1)}>
+          &larr; Back
+        </button>
 
         <div className="title-wrap">
           <h1 className="exercise-h1">{exercise.name}</h1>
@@ -63,9 +62,15 @@ export default function Exercise() {
           </div>
 
           <div className="meta-row">
-            <span><strong>Muscles:</strong> {exercise.muscles.join(", ")}</span>
-            <span><strong>Equipment:</strong> {exercise.equipment}</span>
-            <span><strong>Category:</strong> {category.name}</span>
+            <span>
+              <strong>Muscles:</strong> {exercise.muscles.join(", ")}
+            </span>
+            <span>
+              <strong>Equipment:</strong> {exercise.equipment}
+            </span>
+            <span>
+              <strong>Category:</strong> {category.name}
+            </span>
           </div>
         </div>
 
@@ -82,25 +87,26 @@ export default function Exercise() {
       <div className="exercise-body">
         <p className="desc">{exercise.description}</p>
 
-        {/* Tips (now guaranteed to show something) */}
-        {(() => {
-          const tips = getTipsForExercise(exercise, slug);
-          return tips && tips.length > 0 ? (
-            <div className="tips">
-              <h3>Tips</h3>
-              <ul>
-                {tips.map((t, i) => <li key={i}>{t}</li>)}
-              </ul>
-            </div>
-          ) : null;
-        })()}
+        {/* Tips (curated from data only) */}
+        {Array.isArray(exercise.tips) && exercise.tips.length > 0 && (
+          <div className="tips">
+            <h3>Tips</h3>
+            <ul>
+              {exercise.tips.map((t, i) => (
+                <li key={i}>{t}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Progressions (optional in data) */}
         {Array.isArray(exercise.progressions) && exercise.progressions.length > 0 && (
           <div className="progressions">
             <h3>Progressions</h3>
             <ul>
-              {exercise.progressions.map((p, i) => <li key={i}>{p}</li>)}
+              {exercise.progressions.map((p, i) => (
+                <li key={i}>{p}</li>
+              ))}
             </ul>
           </div>
         )}
@@ -109,14 +115,22 @@ export default function Exercise() {
           <a href={youtubeSearch} target="_blank" rel="noreferrer" className="btn">
             Watch demo on YouTube
           </a>
-          <button className="btn" title="Coming soon">Add to regimen (soon)</button>
-          <button className="btn" title="Coming soon">Add a note (soon)</button>
+          <button className="btn" title="Coming soon">
+            Add to regimen (soon)
+          </button>
+          <button className="btn" title="Coming soon">
+            Add a note (soon)
+          </button>
         </div>
       </div>
 
       <div className="footer-links">
-        <Link to={`/categories/${slug}`} className="link">&larr; Back to {category.name}</Link>
-        <Link to="/categories" className="link">All categories</Link>
+        <Link to={`/categories/${slug}`} className="link">
+          &larr; Back to {category.name}
+        </Link>
+        <Link to="/categories" className="link">
+          All categories
+        </Link>
       </div>
     </div>
   );

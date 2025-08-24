@@ -1,9 +1,10 @@
+/* src/pages/jsx/Category.jsx */
+
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { CATEGORY_LIST, getExercises } from "../../data/exercises";
-import "../../components/ExerciseCard/ExerciseCard.css"; // card styles
-import "../css/Category.css";                             // page styles
 import ExerciseCard from "../../components/ExerciseCard/ExerciseCard";
+import "../css/Category.css";
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
 
 export default function Category() {
@@ -16,124 +17,102 @@ export default function Category() {
 
   const allExercises = useMemo(() => getExercises(slug), [slug]);
 
-  const [q, setQ] = useState("");
-  const [diff, setDiff] = useState("All");
-  const [onlyFavs, setOnlyFavs] = useState(false);
-  const [favKeys, setFavKeys] = useState([]); // <-- no TS type
-
-  // Load favorites when the page mounts / slug changes
+  // favorites (store keys as `${slug}:${id}`)
+  const [favKeys, setFavKeys] = useState([]);
   useEffect(() => {
     setFavKeys(getFavorites());
   }, [slug]);
 
+  const isFav = (id) => favKeys.includes(`${slug}:${id}`);
+  const handleToggleFav = (id) => {
+    const next = toggleFavorite(`${slug}:${id}`);
+    setFavKeys(next);
+  };
+
+  // filters
+  const [query, setQuery] = useState("");
+  const [diff, setDiff] = useState("all");
+  const [onlyFavs, setOnlyFavs] = useState(false);
+
   const filtered = useMemo(() => {
-    const ql = q.trim().toLowerCase();
-
     return allExercises.filter((ex) => {
-      const matchesQ =
-        !ql ||
-        ex.name.toLowerCase().includes(ql) ||
-        ex.muscles.join(" ").toLowerCase().includes(ql);
-
-      const matchesDiff = diff === "All" || ex.difficulty === diff;
-
-      const key = `${slug}:${ex.id}`;
-      const matchesFav = !onlyFavs || favKeys.includes(key);
-
-      return matchesQ && matchesDiff && matchesFav;
+      if (onlyFavs && !isFav(ex.id)) return false;
+      if (diff !== "all" && ex.difficulty.toLowerCase() !== diff) return false;
+      if (query.trim()) {
+        const q = query.toLowerCase();
+        const hay =
+          `${ex.name} ${ex.description} ${ex.muscles.join(" ")} ${ex.equipment}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
     });
-  }, [q, diff, onlyFavs, allExercises, favKeys, slug]);
+  }, [allExercises, onlyFavs, diff, query, favKeys]);
 
   if (!category) {
     return (
-      <div className="category-page">
+      <div className="category-page container">
         <h1>Category not found</h1>
-        <p className="sub">
-          Go back to <Link to="/categories">Categories</Link>.
-        </p>
+        <Link to="/categories" className="link">
+          &larr; Back to all categories
+        </Link>
       </div>
     );
   }
 
-  const handleToggleFav = (exId) => {
-    const key = `${slug}:${exId}`;
-    const next = toggleFavorite(key);
-    setFavKeys(next);
-  };
-
   return (
-    <div className="category-page">
-      <div className="cat-header">
-        <div>
-          <h1>{category.name}</h1>
-          <p className="sub">{allExercises.length} exercises available</p>
-        </div>
-
+    <div className="category-page container">
+      <header className="cat-header">
+        <h1>{category.name}</h1>
+        <p className="sub">{category.desc || "Choose an exercise to learn more."}</p>
         <div className="cat-controls">
           <input
             className="input"
-            placeholder="Search by name or muscle…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search exercises…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
-
           <select
             className="select"
             value={diff}
             onChange={(e) => setDiff(e.target.value)}
           >
-            <option>All</option>
-            <option>Beginner</option>
-            <option>Intermediate</option>
-            <option>Advanced</option>
+            <option value="all">All difficulties</option>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
           </select>
-
-          <label className="checkbox-inline">
+          <label className="checkbox">
             <input
               type="checkbox"
               checked={onlyFavs}
               onChange={(e) => setOnlyFavs(e.target.checked)}
             />
-            Show only favorites
+            Favorites only
           </label>
         </div>
-      </div>
+      </header>
 
-      <div className="exercise-grid">
-        {filtered.map((ex) => {
-          const fav = favKeys.includes(`${slug}:${ex.id}`);
-          return (
-            <Link
-              to={`/categories/${slug}/${ex.id}`}
-              key={ex.id}
-              className="unstyled-link"
-              onClick={(e) => {
-                const t = e.target;
-                if (t instanceof Element && t.closest(".heart")) {
-                  e.preventDefault(); // allow heart toggle without navigating
-                }
-              }}
-            >
-              <ExerciseCard
-                exercise={ex}
-                fav={fav}
-                onToggleFav={() => handleToggleFav(ex.id)}
-                slug={slug}     // ✅ pass slug so preview can compute defaults
-              />
-            </Link>
-          );
-        })}
-      </div>
+      <section className="grid-cards">
+        {filtered.length === 0 ? (
+          <div className="empty">No matches. Try adjusting filters.</div>
+        ) : (
+          filtered.map((ex) => (
+           <ExerciseCard
+             key={ex.id}
+             exercise={ex}
+             fav={isFav(ex.id)}
+             onToggleFav={() => handleToggleFav(ex.id)}
+             slug={slug}
+          />
+          ))
+        )}
+      </section>
 
-      {filtered.length === 0 && (
-        <div className="empty">No exercises match your search/filter.</div>
-      )}
-
-      <div className="backlink">
+      <footer className="cat-footer">
         <Link to="/categories" className="link">
-          &larr; Back to Categories
+          &larr; Back to all categories
         </Link>
-      </div>
+      </footer>
     </div>
   );
 }
