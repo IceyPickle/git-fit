@@ -23,7 +23,6 @@ export default function Category() {
     setFavKeys(getFavorites());
   }, [slug]);
 
-  const isFav = (id) => favKeys.includes(`${slug}:${id}`);
   const handleToggleFav = (id) => {
     const next = toggleFavorite(`${slug}:${id}`);
     setFavKeys(next);
@@ -36,17 +35,16 @@ export default function Category() {
 
   const filtered = useMemo(() => {
     return allExercises.filter((ex) => {
-      if (onlyFavs && !isFav(ex.id)) return false;
+      if (onlyFavs && !favKeys.includes(`${slug}:${ex.id}`)) return false;
       if (diff !== "all" && ex.difficulty.toLowerCase() !== diff) return false;
       if (query.trim()) {
         const q = query.toLowerCase();
-        const hay =
-          `${ex.name} ${ex.description} ${ex.muscles.join(" ")} ${ex.equipment}`.toLowerCase();
+        const hay = `${ex.name} ${ex.description} ${ex.muscles.join(" ")} ${ex.equipment}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [allExercises, onlyFavs, diff, query, favKeys]);
+  }, [allExercises, onlyFavs, diff, query, favKeys, slug]);
 
   if (!category) {
     return (
@@ -97,13 +95,13 @@ export default function Category() {
           <div className="empty">No matches. Try adjusting filters.</div>
         ) : (
           filtered.map((ex) => (
-           <ExerciseCard
-             key={ex.id}
-             exercise={ex}
-             fav={isFav(ex.id)}
-             onToggleFav={() => handleToggleFav(ex.id)}
-             slug={slug}
-          />
+            <ExerciseCard
+              key={ex.id}
+              exercise={ex}
+              fav={favKeys.includes(`${slug}:${ex.id}`)}
+              onToggleFav={() => handleToggleFav(ex.id)}
+              slug={slug}
+            />
           ))
         )}
       </section>
