@@ -1,12 +1,17 @@
 /* src/components/ExerciseCard.jsx */
 
 import "./ExerciseCard.css";
+import { getTipsForExercise } from "../../utils/tips";
 
-export default function ExerciseCard({ exercise, fav = false, onToggleFav }) {
+export default function ExerciseCard({ exercise, fav = false, onToggleFav, slug }) {
   const { name, difficulty, muscles, equipment, description } = exercise;
   const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     name + " exercise demo"
   )}`;
+
+  // Tip preview (first line only)
+  const tips = getTipsForExercise(exercise, slug);
+  const tipPreview = Array.isArray(tips) && tips.length > 0 ? tips[0] : null;
 
   return (
     <div className="exercise-card">
@@ -33,6 +38,9 @@ export default function ExerciseCard({ exercise, fav = false, onToggleFav }) {
         <span><strong>Muscles:</strong> {muscles.join(", ")}</span>
         <span><strong>Equipment:</strong> {equipment}</span>
       </div>
+
+      {/* NEW: tip preview */}
+      {tipPreview && <div className="tip-preview">{tipPreview}</div>}
 
       <p className="exercise-desc">{description}</p>
 

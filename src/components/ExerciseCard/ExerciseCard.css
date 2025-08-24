@@ -90,3 +90,13 @@
   border-color: #2a2b33;
   background: #15161c;
 }
+
+.tip-preview {
+  margin-top: 4px;
+  color: var(--text-dim);
+  font-size: 13px;
+  /* one-line ellipsis */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,42 +1,40 @@
-/* src/pages/jsx/Category.jsx */
-
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { CATEGORY_LIST, EXERCISES_BY_CATEGORY } from "../../data/exercises";
-import "../../components/ExerciseCard/ExerciseCard.css";
-import "../css/Category.css";
+import { CATEGORY_LIST, getExercises } from "../../data/exercises";
+import "../../components/ExerciseCard/ExerciseCard.css"; // card styles
+import "../css/Category.css";                             // page styles
 import ExerciseCard from "../../components/ExerciseCard/ExerciseCard";
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
 
 export default function Category() {
   const { slug } = useParams();
+
   const category = useMemo(
     () => CATEGORY_LIST.find((c) => c.slug === slug) || null,
     [slug]
   );
 
-  const allExercises = useMemo(
-    () => EXERCISES_BY_CATEGORY[slug] ?? [],
-    [slug]
-  );
+  const allExercises = useMemo(() => getExercises(slug), [slug]);
 
   const [q, setQ] = useState("");
   const [diff, setDiff] = useState("All");
   const [onlyFavs, setOnlyFavs] = useState(false);
-  const [favKeys, setFavKeys] = useState([]);
+  const [favKeys, setFavKeys] = useState([]); // <-- no TS type
 
-  // Load favorites on page load & when slug changes
+  // Load favorites when the page mounts / slug changes
   useEffect(() => {
     setFavKeys(getFavorites());
   }, [slug]);
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
+
     return allExercises.filter((ex) => {
       const matchesQ =
         !ql ||
         ex.name.toLowerCase().includes(ql) ||
         ex.muscles.join(" ").toLowerCase().includes(ql);
+
       const matchesDiff = diff === "All" || ex.difficulty === diff;
 
       const key = `${slug}:${ex.id}`;
@@ -105,12 +103,24 @@ export default function Category() {
         {filtered.map((ex) => {
           const fav = favKeys.includes(`${slug}:${ex.id}`);
           return (
-            <ExerciseCard
+            <Link
+              to={`/categories/${slug}/${ex.id}`}
               key={ex.id}
-              exercise={ex}
-              fav={fav}
-              onToggleFav={() => handleToggleFav(ex.id)}
-            />
+              className="unstyled-link"
+              onClick={(e) => {
+                const t = e.target;
+                if (t instanceof Element && t.closest(".heart")) {
+                  e.preventDefault(); // allow heart toggle without navigating
+                }
+              }}
+            >
+              <ExerciseCard
+                exercise={ex}
+                fav={fav}
+                onToggleFav={() => handleToggleFav(ex.id)}
+                slug={slug}     // ✅ pass slug so preview can compute defaults
+              />
+            </Link>
           );
         })}
       </div>

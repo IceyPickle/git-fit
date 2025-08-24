@@ -12,6 +12,7 @@ import Profile from "./pages/jsx/Profile";
 import Categories from "./pages/jsx/Categories";
 import Regimen from "./pages/jsx/Regimen";
 import Category from "./pages/jsx/Category"
+import Exercise from "./pages/jsx/Exercise";
 
 import AuthProvider from "./context/AuthProvider";
 import { useAuth } from "./hooks/useAuth";
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/categories/:slug" element={<Category />} />
+            <Route path="/categories/:slug/:exerciseId" element={<Exercise />} />
 
             {/* Protected */}
             <Route

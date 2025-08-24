@@ -52,3 +52,9 @@
   gap: 8px;
   color: var(--text-dim);
 }
+
+.unstyled-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}

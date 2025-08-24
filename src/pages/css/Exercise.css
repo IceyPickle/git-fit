@@ -1,0 +1,65 @@
+/* src/pages/css/Category.css */
+
+.exercise-page {
+  display: grid;
+  gap: 16px;
+}
+
+.exercise-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.title-wrap {
+  display: grid;
+  gap: 6px;
+}
+
+.exercise-h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+}
+
+.badges {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.meta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+/* reuse heart/button look from ExerciseCard.css */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0f1015;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms ease, transform 100ms ease, border-color 120ms ease;
+}
+.btn:hover { background: #15161c; border-color: #2a2b33; transform: translateY(-1px); }
+
+.btn.back { background: #101118; }
+
+.exercise-body { display: grid; gap: 12px; }
+.desc { color: var(--text); }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.footer-links { display: flex; gap: 12px; }
+.link { color: var(--text-dim); text-decoration: none; }
+.link:hover { color: var(--text); }
