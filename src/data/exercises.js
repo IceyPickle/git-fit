@@ -1348,7 +1348,6 @@ calisthenics: [
   },
 ],
 
-
 };
 
 // --- Sorting helpers ---
