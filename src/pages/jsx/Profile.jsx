@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { CATEGORY_LIST, getExercises } from "../../data/exercises";
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
-import { getAllNotes, getNote, setNote, deleteNote } from "../../utils/notes";
+import { getAllNotes, setNote, deleteNote } from "../../utils/notes";
 import "../css/Profile.css";
 
 export default function Profile() {
