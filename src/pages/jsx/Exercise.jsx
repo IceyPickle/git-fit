@@ -6,6 +6,7 @@ import { CATEGORY_LIST, getExercises } from "../../data/exercises";
 import "../../components/ExerciseCard/ExerciseCard.css"; // reuse badges/btn/heart styles
 import "../css/Exercise.css";                              // page-specific styles
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
+import { toggleInRegimen, isInRegimen, makeKey } from "../../utils/regimen"; // ✅ add this
 
 export default function Exercise() {
   const { slug, exerciseId } = useParams();
@@ -24,6 +25,10 @@ export default function Exercise() {
   const favKey = `${slug}:${exerciseId}`;
   const [isFav, setIsFav] = useState(getFavorites().includes(favKey));
 
+  // ✅ Regimen state
+  const regKey = makeKey(slug, exerciseId);
+  const [inRegimen, setInRegimen] = useState(isInRegimen(regKey));
+
   if (!category || !exercise) {
     return (
       <div className="exercise-page">
@@ -39,6 +44,18 @@ export default function Exercise() {
   const onToggleFav = () => {
     const next = toggleFavorite(favKey);
     setIsFav(next.includes(favKey));
+  };
+
+  // ✅ Toggle add/remove to regimen
+  const onToggleRegimen = () => {
+    toggleInRegimen({
+      slug,
+      id: exerciseId,
+      name: exercise.name,
+      category: category.name,
+      // day: null, // you can pass "mon" | "tue" | ... later when we add day assignment
+    });
+    setInRegimen(isInRegimen(regKey));
   };
 
   const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(
@@ -115,9 +132,12 @@ export default function Exercise() {
           <a href={youtubeSearch} target="_blank" rel="noreferrer" className="btn">
             Watch demo on YouTube
           </a>
-          <button className="btn" title="Coming soon">
-            Add to regimen (soon)
+
+          {/* ✅ Working regimen button */}
+          <button className="btn" onClick={onToggleRegimen}>
+            {inRegimen ? "Remove from regimen" : "Add to regimen"}
           </button>
+
           <button className="btn" title="Coming soon">
             Add a note (soon)
           </button>

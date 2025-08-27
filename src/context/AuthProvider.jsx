@@ -1,46 +1,86 @@
 /* src/context/AuthProvider.jsx */
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { AuthContext } from "./AuthContext";
 
-// This is the provider that wraps around your App
+const STORAGE_KEY = "gitfit_user";
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load from localStorage on first render
+  // hydrate from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("gitfit_user");
-    if (saved) {
-      setUser(JSON.parse(saved));
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") setUser(parsed);
+      } catch {
+        // ignore invalid JSON
+      }
     }
     setLoading(false);
   }, []);
 
-  // Save whenever user changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem("gitfit_user", JSON.stringify(user));
+  const persist = useCallback((next, remember) => {
+    if (remember) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } else {
-      localStorage.removeItem("gitfit_user");
+      localStorage.removeItem(STORAGE_KEY);
     }
-  }, [user]);
+  }, []);
 
-  const login = (email, password) => {
-    // Fake validation for now
-    if (!email.includes("@") || password.length < 4) {
-      return { success: false, message: "Invalid email or password." };
+  const login = useCallback(async (payload = {}) => {
+    const email = String(payload.email ?? "").trim();
+    const password = String(payload.password ?? "");
+    const remember = Boolean(payload.remember);
+
+    if (!email || !emailRegex.test(email)) {
+      throw new Error("Please enter a valid email address.");
     }
-    const fakeUser = { email };
-    setUser(fakeUser);
-    return { success: true };
-  };
+    if (!password || password.length < 6) {
+      throw new Error("Password must be at least 6 characters.");
+    }
 
-  const logout = () => setUser(null);
+    const nextUser = { email, createdAt: Date.now() };
+    setUser(nextUser);
+    persist(nextUser, remember);
+    return nextUser;
+  }, [persist]);
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const signup = useCallback(async (payload = {}) => {
+    const email = String(payload.email ?? "").trim();
+    const password = String(payload.password ?? "");
+    const dob = String(payload.dob ?? "").trim();
+    const remember = Boolean(payload.remember);
+
+    if (!email || !emailRegex.test(email)) {
+      throw new Error("Please enter a valid email address.");
+    }
+    if (!password || password.length < 6) {
+      throw new Error("Password must be at least 6 characters.");
+    }
+    if (!dob) {
+      throw new Error("Please enter your date of birth.");
+    }
+
+    const nextUser = { email, dob, createdAt: Date.now() };
+    setUser(nextUser);
+    persist(nextUser, remember);
+    return nextUser;
+  }, [persist]);
+
+  const logout = useCallback(() => {
+    setUser(null);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, loading, login, signup, logout }),
+    [user, loading, login, signup, logout]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

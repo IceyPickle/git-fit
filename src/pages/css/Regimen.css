@@ -1,0 +1,43 @@
+/* src/pages/css/Regimen.css */
+
+.regimen { max-width: 900px; margin: 0 auto; }
+.regimen h1 { margin-bottom: 8px; }
+.regimen .sub { color: var(--text-dim); margin-bottom: 20px; }
+
+.regimen-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-bottom: 20px;
+}
+
+.regimen-day {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 12px;
+}
+.regimen-day h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.regimen-day .empty {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.regimen-day ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.regimen-day li {
+  margin: 4px 0;
+}
+
+.btn.clear {
+  margin-top: 20px;
+  background: #b91c1c;
+  color: white;
+  border: none;
+}
+.btn.clear:hover { background: #dc2626; }

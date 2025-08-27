@@ -139,3 +139,37 @@
   transition: background 120ms ease, color 120ms ease;
 }
 .link:hover { color: var(--text); background: #14151b; }
+
+/* password field with eye button */
+.pwd-field {
+  position: relative;
+  display: grid;
+}
+.pwd-field input {
+  padding-right: 44px; /* space for the button */
+}
+.pwd-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 36px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #14151b;
+  color: var(--text);
+  cursor: pointer;
+}
+.pwd-toggle:hover { background: #1a1b21; }
+
+/* optional error style */
+.error {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid #5d1e27;
+  background: #200e12;
+  color: #ff9cab;
+  border-radius: 10px;
+  font-size: 14px;
+}

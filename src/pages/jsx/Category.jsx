@@ -7,6 +7,7 @@ import ExerciseCard from "../../components/ExerciseCard/ExerciseCard";
 import "../css/Category.css";
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
 
+
 export default function Category() {
   const { slug } = useParams();
 

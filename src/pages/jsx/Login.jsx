@@ -1,79 +1,85 @@
 /* src/pages/jsx/Login.jsx */
 
-import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import "../css/Login.css";
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export default function Login() {
-  const navigate = useNavigate();
+  const { login } = useAuth();
+  const nav = useNavigate();
   const location = useLocation();
-  const { user, login } = useAuth();
+  const redirectTo = location.state?.from?.pathname || "/profile";
 
-  const [form, setForm] = useState({ email: "", password: "", remember: false });
-  const [touched, setTouched] = useState({ email: false, password: false });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [remember, setRemember] = useState(true);
+  const [err, setErr] = useState("");
 
-  useEffect(() => {
-    if (user) navigate("/profile", { replace: true });
-  }, [user, navigate]);
-
-  function onChange(e) {
-    const { name, value, type, checked } = e.target;
-    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
-  }
-  function onBlur(e) {
-    const { name } = e.target;
-    setTouched((t) => ({ ...t, [name]: true }));
-  }
-
-  const errors = useMemo(() => {
-    const out = {};
-    if (!emailRegex.test(form.email)) out.email = "Enter a valid email address (e.g. you@example.com).";
-    if (form.password.length < 4) out.password = "Enter your password (min 4 characters).";
-    return out;
-  }, [form.email, form.password]);
-
-  const isValid = Object.keys(errors).length === 0;
-
-  function onSubmit(e) {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    if (!isValid) return;
-    login(form.email); // fake auth
-    const dest = location.state?.from?.pathname || "/profile";
-    navigate(dest, { replace: true });
-  }
+    setErr("");
+    try {
+      await login({ email, password, remember });
+      nav(redirectTo, { replace: true });
+    } catch (error) {
+      setErr(error.message || "Login failed");
+    }
+  };
 
   return (
     <div className="auth-wrap">
-      <button aria-label="Close" className="auth-close" onClick={() => navigate(-1)} title="Close">×</button>
-
       <div className="auth-card">
-        <header className="auth-header">
+        <div className="auth-header">
           <h1>Keep Track of Your Progress</h1>
-          <p className="auth-sub">Log in to access your workouts, notes, and regimen.</p>
-        </header>
+          <p className="auth-sub">Log in to save favorites, notes, and your regimen.</p>
+        </div>
 
-        <form className="auth-form" onSubmit={onSubmit} noValidate>
-          <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" placeholder="you@example.com"
-                 value={form.email} onChange={onChange} onBlur={onBlur} aria-invalid={!!errors.email} />
-          {touched.email && errors.email && <div className="field-error">{errors.email}</div>}
+        <form className="auth-form" onSubmit={onSubmit}>
+          <label>Email</label>
+          <input
+            type="email"
+            value={email}
+            placeholder="you@example.com"
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-          <label htmlFor="password">Password</label>
-          <input id="password" name="password" type="password" placeholder="Your password"
-                 value={form.password} onChange={onChange} onBlur={onBlur} aria-invalid={!!errors.password} />
-          {touched.password && errors.password && <div className="field-error">{errors.password}</div>}
+          <label>Password</label>
+          <div className="pwd-field">
+            <input
+              type={showPwd ? "text" : "password"}
+              value={password}
+              placeholder="••••••••"
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="pwd-toggle"
+              aria-label={showPwd ? "Hide password" : "Show password"}
+              onClick={() => setShowPwd((v) => !v)}
+              title={showPwd ? "Hide password" : "Show password"}
+            >
+              {showPwd ? "🙈" : "👁️"}
+            </button>
+          </div>
+
+          {err && <div className="error">{err}</div>}
 
           <div className="auth-actions">
-            <button type="submit" className="btn primary" disabled={!isValid}>Log In</button>
-            <Link to="/signup" className="btn">Need an account?</Link>
+            <button type="submit" className="btn primary">Log in</button>
+            <Link to="/signup" className="btn">Sign up</Link>
           </div>
 
           <div className="auth-meta">
             <label className="checkbox">
-              <input type="checkbox" name="remember" checked={form.remember} onChange={onChange} />{" "}
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+              />
               Remember me
             </label>
             <Link to="/forgot-password" className="link">Forgot password?</Link>
