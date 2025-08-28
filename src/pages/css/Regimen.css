@@ -1,43 +1,132 @@
 /* src/pages/css/Regimen.css */
 
-.regimen { max-width: 900px; margin: 0 auto; }
-.regimen h1 { margin-bottom: 8px; }
-.regimen .sub { color: var(--text-dim); margin-bottom: 20px; }
+.regimen { max-width: 1000px; margin: 0 auto; }
 
+.regimen-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.sub { color: var(--text-dim); margin: 6px 0 0; }
+
+.btn.danger {
+  border: 1px solid #4b2a33;
+  background: #1a1215;
+  color: #ff9cab;
+}
+.btn.danger:hover { background: #25141a; }
+
+/* Grid of days */
 .regimen-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
 }
 
+/* Make each day column auto-size its height and stack content cleanly */
 .regimen-day {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;              /* space between title and list */
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--panel);
   padding: 12px;
 }
+
 .regimen-day h3 {
-  margin: 0 0 6px;
+  margin: 0;              /* avoid extra collapse with the container gap */
   font-size: 15px;
-  font-weight: 700;
-}
-.regimen-day .empty {
-  font-size: 13px;
-  color: var(--text-dim);
-}
-.regimen-day ul {
-  margin: 0;
-  padding-left: 18px;
-}
-.regimen-day li {
-  margin: 4px 0;
+  font-weight: 800;
+  letter-spacing: 0.2px;
 }
 
-.btn.clear {
-  margin-top: 20px;
-  background: #b91c1c;
-  color: white;
-  border: none;
+/* Ensure grid columns don’t stretch oddly and start from the top */
+.regimen-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  align-items: start;      /* ⬅ keep columns top-aligned; no weird stretch */
 }
-.btn.clear:hover { background: #dc2626; }
+
+/* List of items: no default margins, consistent spacing */
+.day-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each regimen row wraps nicely instead of overflowing the header area */
+.regimen-item {
+  display: flex;
+  flex-wrap: wrap;         /* ⬅ allow wrapping so controls drop to next line */
+  align-items: flex-start; /* ⬅ prevent overlap when wrapping */
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0f1015;
+  padding: 10px;
+}
+
+/* Text area can shrink and wrap long names without pushing outside */
+.item-main {
+  flex: 1 1 160px;         /* ⬅ allow it to shrink/grow */
+  min-width: 0;            /* ⬅ enables text to wrap instead of overflow */
+}
+.item-title { 
+  font-weight: 800; 
+  word-break: break-word;  /* ⬅ break long words if needed */
+}
+.item-sub { 
+  font-size: 12px; 
+  color: var(--text-dim); 
+  margin-top: 2px; 
+}
+
+/* Controls stay compact and don’t shove the title */
+.item-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 0 0 auto;          /* ⬅ don’t stretch */
+}
+.select {
+  background: #101118;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  max-width: 100%;         /* ⬅ avoid overflowing narrow columns */
+}
+
+
+/* Presets toolbar */
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px 0;
+}
+.presets .btn {
+  background: #101118;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.presets .btn:hover { background: #15161c; }
+
+/* Plans toolbar */
+.plans-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 12px 0;
+}
+.plan-actions { display: flex; gap: 8px; }
