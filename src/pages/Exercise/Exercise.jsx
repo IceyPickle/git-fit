@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { CATEGORY_LIST, getExercises } from "../../data/exercises";
 import "../../components/ExerciseCard/ExerciseCard.css"; // reuse badges/btn/heart styles
-import "../css/Exercise.css";                              // page-specific styles
+import "./Exercise.css";                              // page-specific styles
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
 import { toggleInRegimen, isInRegimen, makeKey } from "../../utils/regimen"; // ✅ add this
 

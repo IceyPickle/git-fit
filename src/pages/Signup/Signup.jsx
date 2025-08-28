@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import "../css/Login.css"; // reuse same styles
+import "../Login/Login.css"; // reuse same styles
 
 export default function Signup() {
   const { signup } = useAuth();

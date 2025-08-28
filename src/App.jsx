@@ -4,15 +4,15 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar/Navbar";
 import Footer from "./components/Footer/Footer";
 
-import Home from "./pages/jsx/Home";
-import Login from "./pages/jsx/Login";
-import Signup from "./pages/jsx/Signup";
-import ForgotPassword from "./pages/jsx/ForgotPassword";
-import Profile from "./pages/jsx/Profile";
-import Categories from "./pages/jsx/Categories";
-import Regimen from "./pages/jsx/Regimen";
-import Category from "./pages/jsx/Category"
-import Exercise from "./pages/jsx/Exercise";
+import Home from "./pages/Home/Home";
+import Login from "./pages/Login/Login";
+import Signup from "./pages/Signup/Signup";
+import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
+import Profile from "./pages/Profile/Profile";
+import Categories from "./pages/Categories/Categories";
+import Category from "./pages/Category/Category";
+import Exercise from "./pages/Exercise/Exercise";
+import Regimen from "./pages/Regimen/Regimen";
 
 import AuthProvider from "./context/AuthProvider";
 import { useAuth } from "./hooks/useAuth";

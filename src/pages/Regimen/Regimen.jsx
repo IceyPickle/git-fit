@@ -16,7 +16,7 @@ import {
   renamePlan,
   deletePlan,
 } from "../../utils/regimen";
-import "../css/Regimen.css";
+import "./Regimen.css";
 import { getExercises } from "../../data/exercises";
 
 const DAY_LABELS = {

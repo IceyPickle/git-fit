@@ -6,7 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { CATEGORY_LIST, getExercises } from "../../data/exercises";
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
 import { getAllNotes, setNote, deleteNote } from "../../utils/notes";
-import "../css/Profile.css";
+import "./Profile.css";
 
 export default function Profile() {
   const { user } = useAuth();

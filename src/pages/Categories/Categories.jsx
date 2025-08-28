@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CATEGORY_LIST } from "../../data/exercises";
-import "../css/Categories.css";
+import "./Categories.css";
 
 function CatThumb({ slug, emoji, alt }) {
   const [imgOk, setImgOk] = useState(true);

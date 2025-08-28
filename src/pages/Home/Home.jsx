@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { CATEGORY_LIST, getExercises } from "../../data/exercises";
 import { getFavorites } from "../../utils/favorites";
-import "../css/Home.css";
+import "./Home.css";
 
 function resolveFavorite(key) {
   // key format: "<slug>:<exerciseId>"

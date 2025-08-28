@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { CATEGORY_LIST, getExercises } from "../../data/exercises";
 import ExerciseCard from "../../components/ExerciseCard/ExerciseCard";
-import "../css/Category.css";
+import "./Category.css";
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
 
 

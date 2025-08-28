@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import "../css/Login.css";
+import "./Login.css";
 
 export default function Login() {
   const { login } = useAuth();

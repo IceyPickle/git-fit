@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { findUser, setPassword } from "../../utils/users";
-import "../css/Login.css";
+import "../Login/Login.css";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
