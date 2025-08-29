@@ -1,4 +1,4 @@
-/* src/pages/jsx/Category.jsx */
+/* src/pages/Category/Category.jsx */
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";

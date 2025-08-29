@@ -1,4 +1,4 @@
-/* src/pages/jsx/Categories.jsx */
+/* src/pages/Categories/Categories.jsx */
 
 import { useState } from "react";
 import { Link } from "react-router-dom";

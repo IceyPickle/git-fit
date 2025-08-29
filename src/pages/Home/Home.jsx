@@ -1,4 +1,4 @@
-/* src/pages/jsx/Home.jsx */
+/* src/pages/Home/Home.jsx */
 
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";

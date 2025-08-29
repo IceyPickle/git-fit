@@ -1,4 +1,4 @@
-/* src/pages/jsx/Regimen.jsx */
+/* src/pages/Regimen/Regimen.jsx */
 
 import { useMemo, useState } from "react";
 import {

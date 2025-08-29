@@ -1,4 +1,4 @@
-/* src/components/ExerciseCard.jsx */
+/* src/components/ExerciseCard/ExerciseCard.jsx */
 
 import "./ExerciseCard.css";
 import { Link } from "react-router-dom";
