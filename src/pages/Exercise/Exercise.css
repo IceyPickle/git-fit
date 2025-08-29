@@ -63,3 +63,20 @@
 .footer-links { display: flex; gap: 12px; }
 .link { color: var(--text-dim); text-decoration: none; }
 .link:hover { color: var(--text); }
+
+/* Notes */
+.notes { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
+.note-form { display: grid; gap: 12px; margin-top: 8px; }
+.note-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.note-form label span { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+.note-form input, .note-form textarea {
+  width: 100%; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: #101118; color: var(--text);
+}
+.note-actions { display: flex; gap: 10px; }
+.note-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+.note-item { border: 1px solid var(--border); border-radius: 10px; background: #0f1015; padding: 10px; }
+.note-meta { display: flex; gap: 8px; align-items: baseline; font-size: 12px; color: var(--text-dim); }
+.note-textline { margin: 6px 0 0; }
+.note-row-actions { margin-top: 6px; display: flex; gap: 8px; }
+.note-stats { color: var(--text-dim); }

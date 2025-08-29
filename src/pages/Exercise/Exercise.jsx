@@ -1,12 +1,19 @@
-/* src/pages/jsx/Exercise.jsx */
+/* src/pages/Exercise/Exercise.jsx */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { CATEGORY_LIST, getExercises } from "../../data/exercises";
 import "../../components/ExerciseCard/ExerciseCard.css"; // reuse badges/btn/heart styles
-import "./Exercise.css";                              // page-specific styles
+import "./Exercise.css";                                 // page-specific styles
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
-import { toggleInRegimen, isInRegimen, makeKey } from "../../utils/regimen"; // ✅ add this
+
+// ✅ Notes utils
+import {
+  makeKey as makeExerciseKey,
+  listNotesFor,
+  addNote,
+  deleteNote,
+} from "../../utils/notes";
 
 export default function Exercise() {
   const { slug, exerciseId } = useParams();
@@ -25,9 +32,19 @@ export default function Exercise() {
   const favKey = `${slug}:${exerciseId}`;
   const [isFav, setIsFav] = useState(getFavorites().includes(favKey));
 
-  // ✅ Regimen state
-  const regKey = makeKey(slug, exerciseId);
-  const [inRegimen, setInRegimen] = useState(isInRegimen(regKey));
+  // ✅ Notes state
+  const eKey = makeExerciseKey(slug, exerciseId);
+  const [notes, setNotes] = useState(() => listNotesFor(eKey));
+
+  // form fields
+  const [text, setText] = useState("");
+  const [weight, setWeight] = useState("");
+  const [reps, setReps] = useState("");
+  const [sets, setSets] = useState("");
+
+  useEffect(() => {
+    setNotes(listNotesFor(eKey));
+  }, [eKey]);
 
   if (!category || !exercise) {
     return (
@@ -46,21 +63,37 @@ export default function Exercise() {
     setIsFav(next.includes(favKey));
   };
 
-  // ✅ Toggle add/remove to regimen
-  const onToggleRegimen = () => {
-    toggleInRegimen({
-      slug,
-      id: exerciseId,
-      name: exercise.name,
-      category: category.name,
-      // day: null, // you can pass "mon" | "tue" | ... later when we add day assignment
-    });
-    setInRegimen(isInRegimen(regKey));
-  };
-
   const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     exercise.name + " exercise demo"
   )}`;
+
+  // ✅ Create a new note
+  const onAddNote = (e) => {
+    e.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed && weight === "" && reps === "" && sets === "") return;
+
+    addNote({
+      slug,
+      idPart: exerciseId,
+      exerciseName: exercise.name,
+      text: trimmed,
+      weight,
+      reps,
+      sets,
+    });
+    // reset + refresh
+    setText("");
+    setWeight("");
+    setReps("");
+    setSets("");
+    setNotes(listNotesFor(eKey));
+  };
+
+  const onDeleteNote = (id) => {
+    deleteNote(id);
+    setNotes(listNotesFor(eKey));
+  };
 
   return (
     <div className="exercise-page">
@@ -104,7 +137,7 @@ export default function Exercise() {
       <div className="exercise-body">
         <p className="desc">{exercise.description}</p>
 
-        {/* Tips (curated from data only) */}
+        {/* Tips (from curated data) */}
         {Array.isArray(exercise.tips) && exercise.tips.length > 0 && (
           <div className="tips">
             <h3>Tips</h3>
@@ -132,15 +165,90 @@ export default function Exercise() {
           <a href={youtubeSearch} target="_blank" rel="noreferrer" className="btn">
             Watch demo on YouTube
           </a>
-
-          {/* ✅ Working regimen button */}
-          <button className="btn" onClick={onToggleRegimen}>
-            {inRegimen ? "Remove from regimen" : "Add to regimen"}
-          </button>
-
           <button className="btn" title="Coming soon">
-            Add a note (soon)
+            Add to regimen (soon)
           </button>
+        </div>
+
+        {/* ✅ Notes section */}
+        <div className="notes">
+          <h3>My Notes</h3>
+
+          <form className="note-form" onSubmit={onAddNote}>
+            <div className="note-grid">
+              <label>
+                <span>Weight (lb)</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  placeholder="e.g., 135"
+                />
+              </label>
+
+              <label>
+                <span>Reps</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={reps}
+                  onChange={(e) => setReps(e.target.value)}
+                  placeholder="e.g., 8"
+                />
+              </label>
+
+              <label>
+                <span>Sets</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={sets}
+                  onChange={(e) => setSets(e.target.value)}
+                  placeholder="e.g., 3"
+                />
+              </label>
+            </div>
+
+            <label className="note-text">
+              <span>Notes</span>
+              <textarea
+                rows={3}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="How did it feel? Form cues? PRs?"
+              />
+            </label>
+
+            <div className="note-actions">
+              <button className="btn primary" type="submit">Add note</button>
+            </div>
+          </form>
+
+          {notes.length === 0 ? (
+            <p className="empty">No notes yet. Log your first set!</p>
+          ) : (
+            <ul className="note-list">
+              {notes.map((n) => (
+                <li key={n.id} className="note-item">
+                  <div className="note-meta">
+                    <time>{new Date(n.createdAt).toLocaleString()}</time>
+                    {(n.weight || n.reps || n.sets) && (
+                      <span className="note-stats">
+                        {n.weight != null ? `${n.weight} lb` : ""}
+                        {n.reps   != null ? ` · ${n.reps} reps` : ""}
+                        {n.sets   != null ? ` · ${n.sets} sets` : ""}
+                      </span>
+                    )}
+                  </div>
+                  {n.text && <p className="note-textline">{n.text}</p>}
+                  <div className="note-row-actions">
+                    <button className="btn" onClick={() => onDeleteNote(n.id)}>Delete</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
