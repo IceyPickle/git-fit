@@ -1,219 +1,163 @@
 /* src/utils/regimen.js */
 
-const STORAGE_KEY = "gitfit_regimen";
-const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+/*
+   Central helpers for the Regimen feature.
+   - Uses FULL day names to match the UI (Monday..Sunday, Unassigned)
+   - Migrates any old short keys (Mon..Sun) forward automatically
+*/
 
-const now = () => Date.now();
-const normalizeDay = (d) => {
-  if (!d) return null;
-  const v = String(d).trim().toLowerCase().slice(0, 3);
-  return DAYS.includes(v) ? v : null;
+export const V1_KEY = "gitfit_regimen";
+export const V2_KEY = "gitfit_regimen_v2";
+
+// ✅ Full day names used everywhere in the app
+export const DAY_KEYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+  "Unassigned",
+];
+
+// Map short -> full (for migration)
+const SHORT_TO_FULL = {
+  Mon: "Monday",
+  Tue: "Tuesday",
+  Wed: "Wednesday",
+  Thu: "Thursday",
+  Fri: "Friday",
+  Sat: "Saturday",
+  Sun: "Sunday",
 };
 
-function readRaw() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return (parsed && typeof parsed === "object") ? parsed : null;
-  } catch {
-    return null;
+const DEFAULT_PLAN = () => ({
+  id: `plan_${Math.random().toString(36).slice(2, 9)}`,
+  name: "My Plan",
+  days: Object.fromEntries(DAY_KEYS.map((k) => [k, []])),
+});
+
+function normalizePlanDays(plan) {
+  const next = { ...plan, days: { ...plan.days } };
+  for (const k of DAY_KEYS) {
+    if (!Array.isArray(next.days[k])) next.days[k] = [];
   }
+  return next;
 }
-function writeRaw(obj) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+
+// Migrate short keys inside a single plan
+function migrateDayKeys(plan) {
+  if (!plan?.days) return plan;
+  let mutated = false;
+  const days = { ...plan.days };
+
+  for (const shortKey of Object.keys(SHORT_TO_FULL)) {
+    if (Array.isArray(days[shortKey])) {
+      const fullKey = SHORT_TO_FULL[shortKey];
+      const arr = days[shortKey];
+      delete days[shortKey];
+      // merge if full key already exists
+      days[fullKey] = Array.isArray(days[fullKey]) ? [...arr, ...days[fullKey]] : arr;
+      mutated = true;
+    }
+  }
+  const next = { ...plan, days };
+  return normalizePlanDays(mutated ? next : next);
+}
+
+function writeStore(obj) {
+  try {
+    localStorage.setItem(V2_KEY, JSON.stringify(obj));
+  } catch (e) {
+    console.error("regimen: failed to write store:", e);
+  }
   return obj;
 }
 
-function makeEmptyPlan(name = "My Plan") {
-  return {
-    id: `plan_${Math.random().toString(36).slice(2, 9)}`,
-    name,
-    items: [],
-    createdAt: now(),
-    updatedAt: now(),
-  };
-}
-
-function migrateIfNeeded() {
-  const data = readRaw();
-
-  // First run: create an initial multi-plan doc
-  if (!data) {
-    const p = makeEmptyPlan("My Plan");
-    return writeRaw({ currentId: p.id, plans: [p] });
-  }
-
-  // Already multi-plan
-  if (Array.isArray(data.plans)) {
-    if (!data.currentId || !data.plans.find(p => p.id === data.currentId)) {
-      data.currentId = data.plans[0]?.id || makeEmptyPlan("My Plan").id;
-      if (!data.plans.length) data.plans.push(makeEmptyPlan("My Plan"));
-      writeRaw(data);
+export function readStore() {
+  // Prefer V2
+  try {
+    const rawV2 = localStorage.getItem(V2_KEY);
+    if (rawV2) {
+      const parsed = JSON.parse(rawV2);
+      if (parsed && Array.isArray(parsed.plans) && parsed.activeId) {
+        // migrate any plans that still have short keys
+        const migratedPlans = parsed.plans.map((p) => migrateDayKeys(p));
+        const fixed = { ...parsed, plans: migratedPlans };
+        return writeStore(fixed);
+      }
     }
-    return data;
+  } catch (e) {
+    if (import.meta?.env?.DEV) console.warn("regimen v2 parse failed:", e);
   }
 
-  // Legacy single-plan: { items: [...] }
-  if (Array.isArray(data.items)) {
-    const p = makeEmptyPlan("My Plan");
-    p.items = data.items;
-    p.updatedAt = now();
-    return writeRaw({ currentId: p.id, plans: [p] });
+  // Try migrate V1 -> V2 (best-effort)
+  try {
+    const rawV1 = localStorage.getItem(V1_KEY);
+    if (rawV1) {
+      const v1 = JSON.parse(rawV1);
+      let plan = DEFAULT_PLAN();
+      if (v1 && typeof v1 === "object") {
+        // copy any full-name keys
+        for (const k of DAY_KEYS) {
+          if (Array.isArray(v1[k])) plan.days[k] = v1[k];
+        }
+        // copy any short keys and merge
+        for (const shortKey of Object.keys(SHORT_TO_FULL)) {
+          if (Array.isArray(v1[shortKey])) {
+            const fullKey = SHORT_TO_FULL[shortKey];
+            plan.days[fullKey] = [...plan.days[fullKey], ...v1[shortKey]];
+          }
+        }
+      }
+      plan = migrateDayKeys(plan);
+      const migrated = { plans: [plan], activeId: plan.id };
+      return writeStore(migrated);
+    }
+  } catch (e) {
+    if (import.meta?.env?.DEV) console.warn("regimen v1 parse failed:", e);
   }
 
-  // Anything else: reset to a clean multi-plan
-  const p = makeEmptyPlan("My Plan");
-  return writeRaw({ currentId: p.id, plans: [p] });
+  // Fresh store
+  const plan = DEFAULT_PLAN();
+  return writeStore({ plans: [plan], activeId: plan.id });
 }
 
-function root() {
-  const r = migrateIfNeeded();
-  return r || migrateIfNeeded();
+export function getActivePlan(store = readStore()) {
+  const { plans, activeId } = store;
+  const found = plans.find((p) => p.id === activeId) || plans[0];
+  return normalizePlanDays(found);
 }
 
-function getCurrentPlanObj() {
-  const r = root();
-  const plan = r.plans.find(p => p.id === r.currentId) || r.plans[0];
-  if (!plan) {
-    const p = makeEmptyPlan("My Plan");
-    r.plans = [p];
-    r.currentId = p.id;
-    writeRaw(r);
+export function saveActivePlan(mutator) {
+  const store = readStore();
+  const active = getActivePlan(store);
+  const updated = normalizePlanDays(mutator(structuredClone(active)));
+  const plans = store.plans.map((p) => (p.id === active.id ? updated : p));
+  return writeStore({ ...store, plans });
+}
+
+/**
+ * Add one exercise to a day in the active plan.
+ * item: { slug, id, name, category?, difficulty? }
+ * day: one of DAY_KEYS (Monday..Sunday or "Unassigned")
+ * toTop: if true insert at top, else at bottom
+ */
+export function addExerciseToDay(item, day = "Unassigned", toTop = true) {
+  if (!DAY_KEYS.includes(day)) day = "Unassigned";
+  return saveActivePlan((p) => {
+    const arr = Array.isArray(p.days[day]) ? p.days[day] : [];
+    const safe = {
+      slug: String(item.slug),
+      id: String(item.id),
+      name: String(item.name),
+      category: item.category || "",
+      difficulty: item.difficulty || "",
+    };
+    if (toTop) arr.unshift(safe);
+    else arr.push(safe);
+    p.days[day] = arr;
     return p;
-  }
-  return plan;
-}
-
-function savePlanObj(plan) {
-  const r = root();
-  const idx = r.plans.findIndex(p => p.id === plan.id);
-  if (idx === -1) r.plans.push(plan); else r.plans[idx] = plan;
-  plan.updatedAt = now();
-  writeRaw(r);
-  return plan;
-}
-
-// ===== Public API =====
-export function makeKey(slug, id) {
-  return `${slug}:${id}`;
-}
-
-export function listPlans() {
-  const r = root();
-  const arr = Array.isArray(r.plans) ? r.plans : [];
-  return arr.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-}
-export function getCurrentPlanId() {
-  const r = root();
-  return r.currentId || (r.plans[0]?.id ?? null);
-}
-export function getCurrentPlanName() {
-  return getCurrentPlanObj().name || "My Plan";
-}
-export function switchPlan(planId) {
-  const r = root();
-  if (r.plans.some(p => p.id === planId)) {
-    r.currentId = planId;
-    writeRaw(r);
-  }
-  return getCurrentPlanObj();
-}
-export function createPlan(name = "New Plan") {
-  const r = root();
-  const p = makeEmptyPlan(name || "New Plan");
-  r.plans.push(p);
-  r.currentId = p.id;
-  writeRaw(r);
-  return p;
-}
-export function duplicateCurrentPlan(newName = "Copy of Plan") {
-  const r = root();
-  const curr = getCurrentPlanObj();
-  const copy = makeEmptyPlan(newName || `Copy of ${curr.name}`);
-  copy.items = (curr.items || []).map(it => ({ ...it }));
-  r.plans.push(copy);
-  r.currentId = copy.id;
-  writeRaw(r);
-  return copy;
-}
-export function renamePlan(planId, newName) {
-  const r = root();
-  const idx = r.plans.findIndex(p => p.id === planId);
-  if (idx !== -1) {
-    r.plans[idx].name = newName || r.plans[idx].name;
-    r.plans[idx].updatedAt = now();
-    writeRaw(r);
-    return r.plans[idx];
-  }
-  return null;
-}
-export function deletePlan(planId) {
-  const r = root();
-  const next = (r.plans || []).filter(p => p.id !== planId);
-  if (!next.length) {
-    const p = makeEmptyPlan("My Plan");
-    r.plans = [p];
-    r.currentId = p.id;
-  } else {
-    r.plans = next;
-    if (!r.plans.find(p => p.id === r.currentId)) {
-      r.currentId = r.plans[0].id;
-    }
-  }
-  writeRaw(r);
-  return getCurrentPlanObj();
-}
-
-export function listItems() {
-  return getCurrentPlanObj().items || [];
-}
-export function isInRegimen(key) {
-  return listItems().some(it => it.key === key);
-}
-export function addToRegimen({ slug, id, name, category, day = null }) {
-  const key = makeKey(slug, id);
-  const plan = getCurrentPlanObj();
-  plan.items = Array.isArray(plan.items) ? plan.items : [];
-  if (plan.items.some(it => it.key === key)) return plan.items;
-  plan.items.push({
-    key, slug, id, name, category,
-    day: normalizeDay(day), addedAt: now(),
   });
-  savePlanObj(plan);
-  return plan.items;
-}
-export function removeFromRegimen(key) {
-  const plan = getCurrentPlanObj();
-  plan.items = (plan.items || []).filter(it => it.key !== key);
-  savePlanObj(plan);
-  return plan.items;
-}
-export function toggleInRegimen({ slug, id, name, category, day = null }) {
-  const key = makeKey(slug, id);
-  return isInRegimen(key)
-    ? removeFromRegimen(key)
-    : addToRegimen({ slug, id, name, category, day });
-}
-export function assignDay(key, day) {
-  const plan = getCurrentPlanObj();
-  const idx = (plan.items || []).findIndex(it => it.key === key);
-  if (idx !== -1) {
-    plan.items[idx].day = normalizeDay(day);
-    savePlanObj(plan);
-  }
-  return plan.items || [];
-}
-export function clearRegimen() {
-  const plan = getCurrentPlanObj();
-  plan.items = [];
-  savePlanObj(plan);
-  return [];
-}
-export function listByDay() {
-  const out = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [], unassigned: [] };
-  for (const it of listItems()) {
-    const d = normalizeDay(it.day);
-    if (d) out[d].push(it); else out.unassigned.push(it);
-  }
-  return out;
 }

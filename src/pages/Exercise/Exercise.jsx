@@ -7,36 +7,45 @@ import "../../components/ExerciseCard/ExerciseCard.css";
 import "./Exercise.css";
 import { getFavorites, toggleFavorite } from "../../utils/favorites";
 
+// Regimen helpers
+import { DAY_KEYS, addExerciseToDay } from "../../utils/regimen";
+
+// Notes helpers
 import {
   makeKey as makeExerciseKey,
   listNotesFor,
   addNote,
   deleteNote,
-  updateNote,          // ✅ new
+  updateNote,
 } from "../../utils/notes";
 
 export default function Exercise() {
   const { slug, exerciseId } = useParams();
   const navigate = useNavigate();
 
+  // derive category & exercise
   const category = useMemo(
     () => CATEGORY_LIST.find((c) => c.slug === slug) || null,
     [slug]
   );
 
   const exercise = useMemo(() => {
-    const list = getExercises(slug);
+    const list = getExercises(slug) || [];
     return list.find((e) => e.id === exerciseId) || null;
   }, [slug, exerciseId]);
 
+  // favorites
   const favKey = `${slug}:${exerciseId}`;
-  const [isFav, setIsFav] = useState(getFavorites().includes(favKey));
+  const [isFav, setIsFav] = useState(false);
+  useEffect(() => {
+    setIsFav(getFavorites().includes(favKey));
+  }, [favKey]);
 
-  // Notes state
+  // notes
   const eKey = makeExerciseKey(slug, exerciseId);
   const [notes, setNotes] = useState(() => listNotesFor(eKey));
 
-  // create form
+  // create form state
   const [text, setText] = useState("");
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
@@ -49,10 +58,15 @@ export default function Exercise() {
   const [eReps, setEReps] = useState("");
   const [eSets, setESets] = useState("");
 
+  // regimen day selector
+  const [day, setDay] = useState("Unassigned");
+
+  // keep notes synced when route changes
   useEffect(() => {
     setNotes(listNotesFor(eKey));
   }, [eKey]);
 
+  // early return after ALL hooks are declared
   if (!category || !exercise) {
     return (
       <div className="exercise-page">
@@ -74,7 +88,7 @@ export default function Exercise() {
     exercise.name + " exercise demo"
   )}`;
 
-  // Create a new note
+  // add note
   const onAddNote = (e) => {
     e.preventDefault();
     const trimmed = text.trim();
@@ -94,12 +108,13 @@ export default function Exercise() {
     setNotes(listNotesFor(eKey));
   };
 
+  // delete note
   const onDeleteNote = (noteId) => {
     deleteNote(noteId);
     setNotes(listNotesFor(eKey));
-    if (editId === noteId) setEditId(null);
   };
 
+  // edit note
   const startEdit = (n) => {
     setEditId(n.id);
     setEText(n.text || "");
@@ -120,6 +135,22 @@ export default function Exercise() {
     });
     setNotes(listNotesFor(eKey));
     cancelEdit();
+  };
+
+  // add to regimen
+  const onAddToRegimen = () => {
+    addExerciseToDay(
+      {
+        slug,
+        id: exerciseId,
+        name: exercise.name,
+        category: category.name,
+        difficulty: exercise.difficulty,
+      },
+      day,
+      true
+    );
+    alert(`Added "${exercise.name}" to ${day}.`);
   };
 
   return (
@@ -172,12 +203,24 @@ export default function Exercise() {
           </div>
         )}
 
-        <div className="actions">
-          <a href={youtubeSearch} target="_blank" rel="noreferrer" className="btn">Watch demo on YouTube</a>
-          <button className="btn" title="Coming soon">Add to regimen (soon)</button>
+        <div className="actions" style={{ gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <a href={youtubeSearch} target="_blank" rel="noreferrer" className="btn">
+            Watch demo on YouTube
+          </a>
+
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 13, color: "var(--text-dim)" }}>Day:</span>
+            <select className="select" value={day} onChange={(e) => setDay(e.target.value)}>
+              {DAY_KEYS.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </label>
+          <button className="btn" onClick={onAddToRegimen}>
+            Add to regimen
+          </button>
         </div>
 
-        {/* Notes */}
         <div className="notes">
           <h3>My Notes</h3>
 

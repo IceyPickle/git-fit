@@ -5,24 +5,17 @@ import { Link } from "react-router-dom";
 import "./Regimen.css";
 import { getExercises } from "../../data/exercises";
 
+// ✅ Use the centralized DAY_KEYS so Exercise & Regimen stay in sync
+import { DAY_KEYS } from "../../utils/regimen";
+
 // ---------- storage keys & helpers ----------
 const V1_KEY = "gitfit_regimen";
 const V2_KEY = "gitfit_regimen_v2";
 
-const DAY_KEYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Unassigned"];
 const DEFAULT_PLAN = () => ({
   id: `plan_${Math.random().toString(36).slice(2, 9)}`,
   name: "My Plan",
-  days: {
-    Monday: [],
-    Tuesday: [],
-    Wednesday: [],
-    Thursday: [],
-    Friday: [],
-    Saturday: [],
-    Sunday: [],
-    Unassigned: [],
-  },
+  days: Object.fromEntries(DAY_KEYS.map((k) => [k, []])),
 });
 
 // Map for migrating old short keys → full names
@@ -79,7 +72,9 @@ function readStore() {
         return fixed;
       }
     }
-  } catch {}
+  } catch (e) {
+    if (import.meta?.env?.DEV) console.warn("regimen v2 parse failed:", e);
+  }
 
   // Try old v1 (one-plan object with day arrays)
   try {
@@ -88,7 +83,7 @@ function readStore() {
       const v1 = JSON.parse(rawV1);
       let plan = DEFAULT_PLAN();
       if (v1 && typeof v1 === "object") {
-        // Copy any known keys over, then migrate if they’re short
+        // Copy any known full keys over
         for (const k of Object.keys(plan.days)) {
           if (Array.isArray(v1[k])) plan.days[k] = v1[k];
         }
@@ -105,7 +100,9 @@ function readStore() {
       localStorage.setItem(V2_KEY, JSON.stringify(migrated));
       return migrated;
     }
-  } catch {}
+  } catch (e) {
+    if (import.meta?.env?.DEV) console.warn("regimen v1 parse failed:", e);
+  }
 
   // Fresh
   const plan = DEFAULT_PLAN();
@@ -114,7 +111,11 @@ function readStore() {
   return fresh;
 }
 function writeStore(obj) {
-  localStorage.setItem(V2_KEY, JSON.stringify(obj));
+  try {
+    localStorage.setItem(V2_KEY, JSON.stringify(obj));
+  } catch (e) {
+    console.error("regimen: failed to write store:", e);
+  }
   return obj;
 }
 
@@ -287,7 +288,6 @@ export default function Regimen() {
       const incoming = items.filter((it) => {
         const key = `${it.slug}:${it.id}`;
         return skipDup ? !existing.has(key) : true;
-        // no else; keep originals too
       });
       p.days[day] = toTop ? [...incoming, ...arr] : [...arr, ...incoming];
       return p;
