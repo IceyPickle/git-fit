@@ -1,227 +1,577 @@
 /* src/pages/Regimen/Regimen.jsx */
 
 import { useMemo, useState } from "react";
-import {
-  listByDay,
-  assignDay,
-  removeFromRegimen,
-  clearRegimen,
-  addToRegimen,
-  listPlans,
-  getCurrentPlanId,
-  getCurrentPlanName,
-  switchPlan,
-  createPlan,
-  duplicateCurrentPlan,
-  renamePlan,
-  deletePlan,
-} from "../../utils/regimen";
+import { Link } from "react-router-dom";
 import "./Regimen.css";
 import { getExercises } from "../../data/exercises";
 
-const DAY_LABELS = {
-  mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu",
-  fri: "Fri", sat: "Sat", sun: "Sun", unassigned: "Unassigned",
+// ---------- storage keys & helpers ----------
+const V1_KEY = "gitfit_regimen";
+const V2_KEY = "gitfit_regimen_v2";
+
+const DAY_KEYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Unassigned"];
+const DEFAULT_PLAN = () => ({
+  id: `plan_${Math.random().toString(36).slice(2, 9)}`,
+  name: "My Plan",
+  days: {
+    Monday: [],
+    Tuesday: [],
+    Wednesday: [],
+    Thursday: [],
+    Friday: [],
+    Saturday: [],
+    Sunday: [],
+    Unassigned: [],
+  },
+});
+
+// Map for migrating old short keys → full names
+const SHORT_TO_FULL = {
+  Mon: "Monday",
+  Tue: "Tuesday",
+  Wed: "Wednesday",
+  Thu: "Thursday",
+  Fri: "Friday",
+  Sat: "Saturday",
+  Sun: "Sunday",
 };
 
-function has(slug, id) {
-  try {
-    const list = getExercises(slug) || [];
-    return list.some((e) => e.id === id);
-  } catch {
-    return false;
+// Ensure a plan has all DAY_KEYS present as arrays
+function normalizePlanDays(plan) {
+  const next = { ...plan, days: { ...plan.days } };
+  for (const k of DAY_KEYS) {
+    if (!Array.isArray(next.days[k])) next.days[k] = [];
   }
+  return next;
 }
 
-// ✅ FIXED: accept the array and call its .push() method
-function addIfExists(day, slug, id, arr) {
-  if (has(slug, id)) arr.push({ day, slug, id });
+// Migrate a single plan's days from short keys to full keys if needed
+function migrateDayKeys(plan) {
+  if (!plan?.days) return plan;
+  let mutated = false;
+  const days = { ...plan.days };
+
+  for (const shortKey of Object.keys(SHORT_TO_FULL)) {
+    if (Array.isArray(days[shortKey])) {
+      const fullKey = SHORT_TO_FULL[shortKey];
+      const arr = days[shortKey];
+      delete days[shortKey];
+      // Merge if target already exists
+      days[fullKey] = Array.isArray(days[fullKey]) ? [...arr, ...days[fullKey]] : arr;
+      mutated = true;
+    }
+  }
+  const next = { ...plan, days };
+  return normalizePlanDays(mutated ? next : next);
 }
 
-function buildPresets() {
-  const PPL = [], UPPERLOWER = [], BRO5 = [], CALI3 = [], PL3 = [];
+function readStore() {
+  // Try v2
+  try {
+    const rawV2 = localStorage.getItem(V2_KEY);
+    if (rawV2) {
+      const parsed = JSON.parse(rawV2);
+      if (parsed && Array.isArray(parsed.plans) && parsed.activeId) {
+        // Migrate any plans with short keys
+        const migratedPlans = parsed.plans.map((p) => migrateDayKeys(p));
+        const fixed = { ...parsed, plans: migratedPlans };
+        localStorage.setItem(V2_KEY, JSON.stringify(fixed));
+        return fixed;
+      }
+    }
+  } catch {}
 
-  // PPL
-  addIfExists("mon", "chest", "bench-press", PPL);
-  addIfExists("mon", "triceps", "pushdown", PPL);
-  addIfExists("mon", "chest", "incline-db-press", PPL);
-  addIfExists("wed", "back", "barbell-row", PPL);
-  addIfExists("wed", "back", "lat-pulldown", PPL);
-  addIfExists("wed", "biceps", "db-curl", PPL);
-  addIfExists("fri", "legs", "back-squat", PPL);
-  addIfExists("fri", "legs", "rdl", PPL);
-  addIfExists("fri", "abs", "plank", PPL);
+  // Try old v1 (one-plan object with day arrays)
+  try {
+    const rawV1 = localStorage.getItem(V1_KEY);
+    if (rawV1) {
+      const v1 = JSON.parse(rawV1);
+      let plan = DEFAULT_PLAN();
+      if (v1 && typeof v1 === "object") {
+        // Copy any known keys over, then migrate if they’re short
+        for (const k of Object.keys(plan.days)) {
+          if (Array.isArray(v1[k])) plan.days[k] = v1[k];
+        }
+        // Also copy short keys if present
+        for (const shortKey of Object.keys(SHORT_TO_FULL)) {
+          if (Array.isArray(v1[shortKey])) {
+            const fullKey = SHORT_TO_FULL[shortKey];
+            plan.days[fullKey] = [...plan.days[fullKey], ...v1[shortKey]];
+          }
+        }
+      }
+      plan = migrateDayKeys(plan);
+      const migrated = { plans: [plan], activeId: plan.id };
+      localStorage.setItem(V2_KEY, JSON.stringify(migrated));
+      return migrated;
+    }
+  } catch {}
 
-  // Upper/Lower
-  addIfExists("mon", "chest", "bench-press", UPPERLOWER);
-  addIfExists("mon", "back", "barbell-row", UPPERLOWER);
-  addIfExists("mon", "biceps", "db-curl", UPPERLOWER);
-  addIfExists("mon", "triceps", "pushdown", UPPERLOWER);
-  addIfExists("tue", "legs", "back-squat", UPPERLOWER);
-  addIfExists("tue", "legs", "rdl", UPPERLOWER);
-  addIfExists("tue", "abs", "crunch", UPPERLOWER);
-  addIfExists("thu", "chest", "incline-db-press", UPPERLOWER);
-  addIfExists("thu", "back", "lat-pulldown", UPPERLOWER);
-  addIfExists("thu", "biceps", "hammer-curl", UPPERLOWER);
-  addIfExists("thu", "triceps", "oh-db-ext", UPPERLOWER);
-  addIfExists("fri", "legs", "front-squat", UPPERLOWER);
-  addIfExists("fri", "legs", "hip-thrust", UPPERLOWER);
-  addIfExists("fri", "abs", "reverse-crunch", UPPERLOWER);
-
-  // Bro 5
-  addIfExists("mon", "chest", "bench-press", BRO5);
-  addIfExists("mon", "chest", "cable-crossover", BRO5);
-  addIfExists("tue", "back", "barbell-row", BRO5);
-  addIfExists("tue", "back", "face-pull", BRO5);
-  addIfExists("wed", "legs", "back-squat", BRO5);
-  addIfExists("wed", "legs", "leg-press", BRO5);
-  addIfExists("thu", "triceps", "skullcrusher", BRO5);
-  addIfExists("thu", "biceps", "ez-bar-curl", BRO5);
-  addIfExists("fri", "abs", "plank", BRO5);
-  addIfExists("fri", "cardio", "incline-walk", BRO5);
-
-  // Calisthenics 3
-  addIfExists("mon", "calisthenics", "cal-pushup", CALI3);
-  addIfExists("mon", "calisthenics", "cal-row", CALI3);
-  addIfExists("mon", "abs", "hanging-leg-raise", CALI3);
-  addIfExists("wed", "calisthenics", "cal-pullup", CALI3);
-  addIfExists("wed", "calisthenics", "cal-dip", CALI3);
-  addIfExists("wed", "calisthenics", "cal-hollow", CALI3);
-  addIfExists("fri", "calisthenics", "cal-pistol", CALI3);
-  addIfExists("fri", "calisthenics", "cal-handstand", CALI3);
-  addIfExists("fri", "abs", "side-plank", CALI3);
-
-  // Powerlifting 3
-  addIfExists("mon", "powerlifting", "pl-back-squat", PL3);
-  addIfExists("mon", "powerlifting", "pl-row", PL3);
-  addIfExists("mon", "abs", "dead-bug", PL3);
-  addIfExists("wed", "powerlifting", "pl-bench", PL3);
-  addIfExists("wed", "powerlifting", "pl-ohp", PL3);
-  addIfExists("wed", "triceps", "close-grip-bench", PL3);
-  addIfExists("fri", "powerlifting", "pl-deadlift", PL3);
-  addIfExists("fri", "legs", "calf-raise-stand", PL3);
-  addIfExists("fri", "back", "face-pull", PL3);
-
-  return { PPL, UPPERLOWER, BRO5, CALI3, PL3 };
+  // Fresh
+  const plan = DEFAULT_PLAN();
+  const fresh = { plans: [plan], activeId: plan.id };
+  localStorage.setItem(V2_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+function writeStore(obj) {
+  localStorage.setItem(V2_KEY, JSON.stringify(obj));
+  return obj;
 }
 
 export default function Regimen() {
-  const [byDay, setByDay] = useState(listByDay());
-  const [plans, setPlans] = useState(listPlans());
-  const [currentId, setCurrentId] = useState(getCurrentPlanId());
-  const [currentName, setCurrentName] = useState(getCurrentPlanName());
+  const [store, setStore] = useState(() => readStore());
+  const [preview, setPreview] = useState(null); // {slug, id}
 
-  const refreshPlanData = () => {
-    setByDay(listByDay());
-    setPlans(listPlans());
-    setCurrentId(getCurrentPlanId());
-    setCurrentName(getCurrentPlanName());
+  const activePlan = useMemo(() => {
+    const p = store.plans.find((p) => p.id === store.activeId);
+    return p ? normalizePlanDays(p) : normalizePlanDays(store.plans[0]);
+  }, [store]);
+
+  const setActivePlan = (planUpdater) => {
+    setStore((prev) => {
+      const current = prev.plans.find((p) => p.id === prev.activeId) || prev.plans[0];
+      const updated = normalizePlanDays(planUpdater(structuredClone(current)));
+      const plans = prev.plans.map((p) => (p.id === current.id ? updated : p));
+      const next = writeStore({ ...prev, plans });
+      return next;
+    });
   };
 
-  const onAssign = (key, value) => { assignDay(key, value === "unassigned" ? null : value); setByDay(listByDay()); };
-  const onRemove = (key) => { removeFromRegimen(key); setByDay(listByDay()); };
-  const onClear   = () => { if (confirm("Clear the current plan?")) { clearRegimen(); setByDay(listByDay()); } };
+  // ---------- plan actions ----------
+  const onNewPlan = () => {
+    const p = DEFAULT_PLAN();
+    setStore((prev) => writeStore({ plans: [p, ...prev.plans], activeId: p.id }));
+  };
+  const onRenamePlan = () => {
+    const name = prompt("New plan name:", activePlan?.name || "");
+    if (!name) return;
+    setActivePlan((p) => ({ ...p, name: name.trim() || p.name }));
+  };
+  const onDuplicatePlan = () => {
+    const copy = normalizePlanDays(structuredClone(activePlan));
+    copy.id = `plan_${Math.random().toString(36).slice(2, 9)}`;
+    copy.name = `${activePlan.name} (copy)`;
+    setStore((prev) => writeStore({ plans: [copy, ...prev.plans], activeId: copy.id }));
+  };
+  const onDeletePlan = () => {
+    if (!confirm(`Delete plan "${activePlan.name}"?`)) return;
+    setStore((prev) => {
+      const left = prev.plans.filter((p) => p.id !== activePlan.id);
+      if (left.length === 0) {
+        const p = DEFAULT_PLAN();
+        return writeStore({ plans: [p], activeId: p.id });
+      }
+      return writeStore({ plans: left, activeId: left[0].id });
+    });
+  };
+  const onChangeActive = (id) => {
+    setStore((prev) => writeStore({ ...prev, activeId: id }));
+  };
 
-  const applyPreset = (items) => {
-    try {
-      clearRegimen();
-      for (const it of items) {
-        const list = getExercises(it.slug) || [];
-        const ex = list.find((e) => e.id === it.id);
-        if (!ex) continue;
-        addToRegimen({
-          slug: it.slug,
-          id: it.id,
+  // ---------- day helpers ----------
+  const indexOfDay = (day) => DAY_KEYS.indexOf(day);
+  const prevDay = (day) => DAY_KEYS[(indexOfDay(day) + DAY_KEYS.length - 1) % DAY_KEYS.length];
+  const nextDay = (day) => DAY_KEYS[(indexOfDay(day) + 1) % DAY_KEYS.length];
+
+  // ---------- item ops ----------
+  const moveItem = (fromDay, idx, toDay, toIndex = 0) =>
+    setActivePlan((p) => {
+      const fromArr = Array.isArray(p.days[fromDay]) ? p.days[fromDay].slice() : [];
+      const toArr = Array.isArray(p.days[toDay]) ? p.days[toDay].slice() : [];
+      const [item] = fromArr.splice(idx, 1);
+      if (!item) return p;
+      toArr.splice(toIndex, 0, item);
+      p.days[fromDay] = fromArr;
+      p.days[toDay] = toArr;
+      return p;
+    });
+
+  const removeItem = (day, idx) =>
+    setActivePlan((p) => {
+      const arr = Array.isArray(p.days[day]) ? p.days[day].slice() : [];
+      arr.splice(idx, 1);
+      p.days[day] = arr;
+      return p;
+    });
+
+  const reorderItem = (day, idx, dir) =>
+    setActivePlan((p) => {
+      const arr = Array.isArray(p.days[day]) ? p.days[day].slice() : [];
+      const j = idx + dir;
+      if (j < 0 || j >= arr.length) return p;
+      [arr[idx], arr[j]] = [arr[j], arr[idx]];
+      p.days[day] = arr;
+      return p;
+    });
+
+  const clearDay = (day) =>
+    setActivePlan((p) => {
+      p.days[day] = [];
+      return p;
+    });
+
+  const clearPlan = () => {
+    if (!confirm("Clear ALL days in this plan?")) return;
+    setActivePlan((p) => {
+      for (const k of DAY_KEYS) p.days[k] = [];
+      return p;
+    });
+  };
+
+  // ============================================================
+  //        RANDOMIZER (PPL + Powerlifting + Calisthenics)
+  // ============================================================
+  const TYPE_MAP = {
+    Push: ["chest", "triceps"],
+    Pull: ["back", "biceps", "forearms"],
+    Legs: ["legs", "abs"],
+    Powerlifting: ["powerlifting"],
+    Calisthenics: ["calisthenics"],
+  };
+
+  const DIFFS = ["Beginner", "Intermediate", "Advanced"];
+
+  function normalizeDifficulty(d) {
+    const s = String(d || "").toLowerCase();
+    if (s.startsWith("beg")) return "Beginner";
+    if (s.startsWith("int")) return "Intermediate";
+    if (s.startsWith("adv")) return "Advanced";
+    return "Beginner";
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function poolForType(type) {
+    const slugs = TYPE_MAP[type] || [];
+    const byDiff = { Beginner: [], Intermediate: [], Advanced: [] };
+
+    for (const slug of slugs) {
+      const list = getExercises(slug) || [];
+      for (const ex of list) {
+        const diff = normalizeDifficulty(ex.difficulty);
+        byDiff[diff].push({
+          slug,
+          id: ex.id,
           name: ex.name,
-          category: ex.categoryName || "",
-          day: it.day,
+          category: type,
+          difficulty: diff,
         });
       }
-      setByDay(listByDay());
-    } catch (e) {
-      console.warn("Preset apply failed:", e);
     }
+    for (const d of DIFFS) byDiff[d] = shuffle(byDiff[d]);
+    return byDiff;
+  }
+
+  function takeN(pool, n) {
+    return pool.slice(0, Math.max(0, n));
+  }
+
+  function randomSetFor(type) {
+    const pools = poolForType(type);
+    const pick = [];
+    for (const d of DIFFS) pick.push(...takeN(pools[d], 2)); // 2 per difficulty
+    return pick;
+  }
+
+  function addItemsToDay(day, items, { toTop = true, skipDup = true } = {}) {
+    setActivePlan((p) => {
+      const arr = Array.isArray(p.days[day]) ? p.days[day] : [];
+      const existing = new Set(arr.map((it) => `${it.slug}:${it.id}`));
+      const incoming = items.filter((it) => {
+        const key = `${it.slug}:${it.id}`;
+        return skipDup ? !existing.has(key) : true;
+        // no else; keep originals too
+      });
+      p.days[day] = toTop ? [...incoming, ...arr] : [...arr, ...incoming];
+      return p;
+    });
+  }
+
+  // ✅ Use full day name as default now
+  const [qfDay, setQfDay] = useState("Monday");
+  const [qfType, setQfType] = useState("Push");
+  const [qfSkipDup, setQfSkipDup] = useState(true);
+
+  const onQuickFillOne = () => {
+    const set = randomSetFor(qfType);
+    if (set.length === 0) {
+      alert(`No exercises found for ${qfType}.`);
+      return;
+    }
+    addItemsToDay(qfDay, set, { toTop: true, skipDup: qfSkipDup });
   };
 
-  const { PPL, UPPERLOWER, BRO5, CALI3, PL3 } = useMemo(buildPresets, []);
+  const onFillPPLCycle = () => {
+    const order = ["Push", "Pull", "Legs", "Push", "Pull", "Legs"];
+    const startIdx = DAY_KEYS.indexOf(qfDay);
+    if (startIdx === -1) return;
 
-  const onSwitchPlan     = (id) => { switchPlan(id); refreshPlanData(); };
-  const onCreatePlan     = () => { const name = prompt("Name your new plan:", "My Plan"); if (!name) return; createPlan(name); refreshPlanData(); };
-  const onDuplicatePlan  = () => { const name = prompt("Name for the copy:", `Copy of ${currentName}`) || `Copy of ${currentName}`; duplicateCurrentPlan(name); refreshPlanData(); };
-  const onRenamePlan     = () => { const name = prompt("Rename current plan to:", currentName); if (!name) return; renamePlan(currentId, name); refreshPlanData(); };
-  const onDeletePlan     = () => { if (!confirm(`Delete "${currentName}"?`)) return; deletePlan(currentId); refreshPlanData(); };
+    for (let i = 0; i < order.length; i++) {
+      const day = DAY_KEYS[(startIdx + i) % DAY_KEYS.length];
+      if (day === "Unassigned") continue;
+      const set = randomSetFor(order[i]);
+      if (set.length) addItemsToDay(day, set, { toTop: true, skipDup: qfSkipDup });
+    }
+    alert("Filled a 6-day PPL cycle (2/2/2 per day).");
+  };
 
-  const dayEntries = Object.entries(byDay || {});
+  const onFillPowerliftingCycle = () => {
+    const order = ["Powerlifting", "Pull", "Legs", "Powerlifting", "Pull", "Legs"];
+    const startIdx = DAY_KEYS.indexOf(qfDay);
+    if (startIdx === -1) return;
 
+    for (let i = 0; i < order.length; i++) {
+      const day = DAY_KEYS[(startIdx + i) % DAY_KEYS.length];
+      if (day === "Unassigned") continue;
+      const set = randomSetFor(order[i]);
+      if (set.length) addItemsToDay(day, set, { toTop: true, skipDup: qfSkipDup });
+    }
+    alert("Filled a 6-day Powerlifting-focused cycle (PL/Pull/Legs x2).");
+  };
+
+  const onFillCalisthenicsCycle = () => {
+    const order = ["Calisthenics", "Pull", "Legs", "Calisthenics", "Pull", "Legs"];
+    const startIdx = DAY_KEYS.indexOf(qfDay);
+    if (startIdx === -1) return;
+
+    for (let i = 0; i < order.length; i++) {
+      const day = DAY_KEYS[(startIdx + i) % DAY_KEYS.length];
+      if (day === "Unassigned") continue;
+      const set = randomSetFor(order[i]);
+      if (set.length) addItemsToDay(day, set, { toTop: true, skipDup: qfSkipDup });
+    }
+    alert("Filled a 6-day Calisthenics-focused cycle (Cal/Pull/Legs x2).");
+  };
+
+  // ---------- rendering ----------
   return (
     <div className="regimen container">
-      <div className="regimen-head">
-        <div>
+      <header className="reg-header">
+        <div className="reg-title">
           <h1>Training Regimen</h1>
-          <p className="sub">Manage multiple plans, use presets, and assign exercises to days.</p>
+          <p className="sub">Organize your workouts by day — or use the quick generators to get started fast.</p>
         </div>
-        <button className="btn danger" onClick={onClear}>Clear current plan</button>
-      </div>
 
-      <div className="plans-bar">
-        <select className="select" value={currentId || ""} onChange={(e) => onSwitchPlan(e.target.value)} title="Switch plan">
-          {(plans || []).map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-        <div className="plan-actions">
-          <button className="btn" onClick={onCreatePlan}>New</button>
-          <button className="btn" onClick={onDuplicatePlan}>Duplicate</button>
-          <button className="btn" onClick={onRenamePlan}>Rename</button>
-          <button className="btn danger" onClick={onDeletePlan}>Delete</button>
+        <div className="reg-planbar">
+          <select
+            className="select"
+            value={store.activeId}
+            onChange={(e) => onChangeActive(e.target.value)}
+            aria-label="Active plan"
+          >
+            {store.plans.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+
+          <div className="plan-actions">
+            <button className="btn" onClick={onNewPlan}>New</button>
+            <button className="btn" onClick={onRenamePlan}>Rename</button>
+            <button className="btn" onClick={onDuplicatePlan}>Duplicate</button>
+            <button className="btn danger" onClick={onDeletePlan}>Delete</button>
+            <button className="btn" onClick={clearPlan}>Clear Plan</button>
+          </div>
         </div>
-      </div>
 
-      <div className="presets">
-        <button className="btn" onClick={() => applyPreset(PPL)}>PPL (3-day)</button>
-        <button className="btn" onClick={() => applyPreset(UPPERLOWER)}>Upper/Lower (4-day)</button>
-        <button className="btn" onClick={() => applyPreset(BRO5)}>Bro Split (5-day)</button>
-        <button className="btn" onClick={() => applyPreset(CALI3)}>Calisthenics (3-day)</button>
-        <button className="btn" onClick={() => applyPreset(PL3)}>Powerlifting (3-day)</button>
-      </div>
+        {/* QUICK FILL */}
+        <div className="plan-actions" style={{ flexWrap: "wrap", gap: 8 }}>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span className="muted">Day</span>
+            <select className="select" value={qfDay} onChange={(e) => setQfDay(e.target.value)}>
+              {DAY_KEYS.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </label>
 
-      <div className="regimen-grid">
-        {dayEntries.map(([day, items]) => (
-          <section key={day} className="regimen-day">
-            <h3>{DAY_LABELS[day] ?? day.toUpperCase()}</h3>
-            {(items || []).length === 0 ? (
-              <p className="empty">No exercises</p>
-            ) : (
-              <ul className="day-list">
-                {(items || []).map((it) => (
-                  <li key={it.key} className="regimen-item">
-                    <div className="item-main">
-                      <div className="item-title">{it.name}</div>
-                      <div className="item-sub">{it.category}</div>
-                    </div>
-                    <div className="item-actions">
-                      <select
-                        className="select"
-                        value={it.day || "unassigned"}
-                        onChange={(e) => onAssign(it.key, e.target.value)}
-                      >
-                        <option value="unassigned">Unassigned</option>
-                        <option value="mon">Mon</option>
-                        <option value="tue">Tue</option>
-                        <option value="wed">Wed</option>
-                        <option value="thu">Thu</option>
-                        <option value="fri">Fri</option>
-                        <option value="sat">Sat</option>
-                        <option value="sun">Sun</option>
-                      </select>
-                      <button className="btn" onClick={() => onRemove(it.key)}>Remove</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span className="muted">Type</span>
+            <select className="select" value={qfType} onChange={(e) => setQfType(e.target.value)}>
+              <option>Push</option>
+              <option>Pull</option>
+              <option>Legs</option>
+              <option>Powerlifting</option>
+              <option>Calisthenics</option>
+            </select>
+          </label>
+
+          <label className="checkbox" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <input type="checkbox" checked={qfSkipDup} onChange={(e) => setQfSkipDup(e.target.checked)} />
+            <span className="muted">Skip duplicates in day</span>
+          </label>
+
+          <button className="btn" onClick={onQuickFillOne}>Add Random 2/2/2 to Day</button>
+          <button className="btn" onClick={onFillPPLCycle}>Fill 6-Day PPL Cycle</button>
+          <button className="btn" onClick={onFillPowerliftingCycle}>Fill 6-Day PL Cycle</button>
+          <button className="btn" onClick={onFillCalisthenicsCycle}>Fill 6-Day Calisthenics Cycle</button>
+        </div>
+      </header>
+
+      {/* GRID */}
+      <section className="reg-grid">
+        {DAY_KEYS.map((day) => (
+          <DayColumn
+            key={day}
+            label={day}
+            items={activePlan.days[day] || []}
+            onMovePrev={(idx) => moveItem(day, idx, prevDay(day), 0)}
+            onMoveNext={(idx) => moveItem(day, idx, nextDay(day), 0)}
+            onMoveTo={(idx, targetDay) => moveItem(day, idx, targetDay, 0)}
+            onUp={(idx) => reorderItem(day, idx, -1)}
+            onDown={(idx) => reorderItem(day, idx, +1)}
+            onRemove={(idx) => removeItem(day, idx)}
+            onClear={() => clearDay(day)}
+            onDetails={(it) => setPreview({ slug: it.slug, id: it.id })}
+          />
         ))}
+      </section>
+
+      {/* Details Modal */}
+      {preview && (
+        <DetailsModal
+          slug={preview.slug}
+          exerciseId={preview.id}
+          onClose={() => setPreview(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function DayColumn({
+  label,
+  items,
+  onMovePrev,
+  onMoveNext,
+  onMoveTo,
+  onUp,
+  onDown,
+  onRemove,
+  onClear,
+  onDetails,
+}) {
+  return (
+    <div className="reg-col">
+      <div className="reg-col-head">
+        <div className="reg-col-title">
+          <h3>{label}</h3>
+          <span className="pill">{items.length}</span>
+        </div>
+        <button className="btn small" onClick={onClear} disabled={items.length === 0}>
+          Clear
+        </button>
+      </div>
+
+      <ol className="reg-col-list">
+        {items.length === 0 ? (
+          <li className="empty">No exercises</li>
+        ) : (
+          items.map((it, i) => (
+            <li key={`${it.slug}:${it.id}:${i}`} className="ex-card">
+              {/* Header: Name + Difficulty */}
+              <div className="ex-head">
+                <div className="ex-name">{it.name}</div>
+                {it.difficulty && (
+                  <span className={`tag diff-${String(it.difficulty).toLowerCase()}`}>
+                    {it.difficulty}
+                  </span>
+                )}
+              </div>
+
+              {/* Subline: Category/slug */}
+              <div className="ex-sub">
+                <span className="muted">{it.category || it.slug}</span>
+              </div>
+
+              {/* Actions row */}
+              <div className="ex-actions">
+                <button className="icon" onClick={() => onDetails(it)} title="Details" aria-label="Details">
+                  Details
+                </button>
+                <button className="icon" onClick={() => onUp(i)} title="Move up" aria-label="Move up">↑</button>
+                <button className="icon" onClick={() => onDown(i)} title="Move down" aria-label="Move down">↓</button>
+                <button className="icon" onClick={() => onMovePrev(i)} title="Move to previous day" aria-label="Move to previous day">◀</button>
+                <button className="icon" onClick={() => onMoveNext(i)} title="Move to next day" aria-label="Move to next day">▶</button>
+                <select
+                  className="mini"
+                  onChange={(e) => { if (e.target.value) onMoveTo(i, e.target.value); e.target.value = ""; }}
+                  defaultValue=""
+                  aria-label="Move to another day"
+                >
+                  <option value="" disabled>Move to…</option>
+                  {DAY_KEYS.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+                <button className="icon danger" onClick={() => onRemove(i)} title="Remove" aria-label="Remove">✕</button>
+              </div>
+            </li>
+          ))
+        )}
+      </ol>
+    </div>
+  );
+}
+
+/* ---------------- Modal ---------------- */
+
+function DetailsModal({ slug, exerciseId, onClose }) {
+  const list = getExercises(slug) || [];
+  const ex = list.find((e) => e.id === exerciseId) || null;
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        {!ex ? (
+          <>
+            <div className="modal-header">
+              <h3>Not found</h3>
+              <button className="icon" onClick={onClose} aria-label="Close">✕</button>
+            </div>
+            <div className="modal-body">
+              <p>That exercise could not be found. It may have been removed.</p>
+            </div>
+            <div className="modal-actions">
+              <button className="btn" onClick={onClose}>Close</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="modal-header">
+              <h3>{ex.name}</h3>
+              <button className="icon" onClick={onClose} aria-label="Close">✕</button>
+            </div>
+
+            <div className="modal-body">
+              <div className="modal-meta">
+                <span className={`tag diff-${ex.difficulty.toLowerCase()}`}>{ex.difficulty}</span>
+                <span><strong>Muscles:</strong> {ex.muscles?.join(", ")}</span>
+                <span><strong>Equipment:</strong> {ex.equipment}</span>
+              </div>
+
+              {ex.description && <p className="desc">{ex.description}</p>}
+
+              {Array.isArray(ex.tips) && ex.tips.length > 0 && (
+                <div className="tips">
+                  <h4>Tips</h4>
+                  <ul>{ex.tips.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-actions">
+              <Link className="btn" to={`/categories/${slug}/${exerciseId}`} onClick={onClose}>
+                Open full page
+              </Link>
+              <button className="btn" onClick={onClose}>Close</button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
