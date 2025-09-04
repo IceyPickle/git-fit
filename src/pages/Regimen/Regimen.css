@@ -6,9 +6,7 @@
 .reg-title h1 { margin: 0; }
 .reg-title .sub { margin: 4px 0 0; color: var(--text-dim); }
 
-.reg-planbar {
-  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-}
+.reg-planbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .select {
   padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border);
   background: #101118; color: var(--text);
@@ -38,10 +36,8 @@
 .reg-col {
   display: flex; flex-direction: column;
   border: 1px solid var(--border); border-radius: 14px; background: #0f1015;
-  min-width: 0;
-  max-width: 100%;
+  min-width: 0; max-width: 100%;
 }
-
 .reg-col-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px; border-bottom: 1px solid var(--border);
@@ -110,9 +106,9 @@
 }
 .tag.diff-beginner { color: #b9f3d3; border-color: #264134; background: #13221a; }
 .tag.diff-intermediate { color: #d0e0ff; border-color: #27334b; background: #151a24; }
-.tag.diff-advanced { color: #ffd2c2; border-color: #4a2b28; background: #211413; }
+.tag.diff-advanced { color: #ffd2c2; border-color: #4a2a28; background: #211413; }
 
-/* Optional: prevent any accidental horizontal scrolling on the page */
+/* No horizontal scrolling */
 .regimen { overflow-x: hidden; }
 
 /* ---- Exercise details modal ---- */
@@ -121,7 +117,6 @@
   display: grid; place-items: center;
   z-index: 50;
 }
-
 .modal {
   width: min(720px, 92vw);
   max-height: 85vh;
@@ -132,13 +127,11 @@
   display: flex; flex-direction: column;
   overflow: hidden;
 }
-
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 14px; border-bottom: 1px solid var(--border);
 }
 .modal-header h3 { margin: 0; font-size: 18px; }
-
 .modal-body {
   padding: 14px; overflow: auto; display: grid; gap: 12px;
 }
@@ -146,8 +139,52 @@
 .modal-body .desc { color: var(--text); }
 .modal-body .tips h4 { margin: 0 0 6px 0; }
 .modal-body .tips ul { margin: 0; padding-left: 18px; }
-
 .modal-actions {
   display: flex; gap: 8px; justify-content: flex-end;
   padding: 12px 14px; border-top: 1px solid var(--border);
 }
+
+/* --- Drag & drop feedback --- */
+.ex-card.drag-over {
+  border-color: #2f8f5b;
+  background: #0f151c;
+  box-shadow: 0 0 0 2px rgba(47, 143, 91, 0.25) inset;
+}
+.reg-col-list.drag-over {
+  outline: 2px dashed #2f8f5b;
+  outline-offset: 4px;
+}
+
+/* --- Targets row inside each card --- */
+.ex-targets {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+.ex-targets label { display: grid; gap: 4px; font-size: 12px; color: var(--text-dim); }
+.ex-targets input {
+  width: 100%;
+  padding: 8px 10px;             /* bigger input for clarity */
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #101118;
+  color: var(--text);
+  font-size: 14px;               /* ensure digits are readable */
+  line-height: 1.2;
+}
+.ex-targets input::placeholder { color: #8a8fa6; }
+
+.weight-row { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; }
+.weight-row .spin { display: flex; gap: 6px; }
+.weight-row .mini {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #101118;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+}
+.weight-row .mini:hover { background: #161722; }

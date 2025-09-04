@@ -5,17 +5,26 @@ import { Link } from "react-router-dom";
 import "./Regimen.css";
 import { getExercises } from "../../data/exercises";
 
-// ✅ Use the centralized DAY_KEYS so Exercise & Regimen stay in sync
-import { DAY_KEYS } from "../../utils/regimen";
-
 // ---------- storage keys & helpers ----------
 const V1_KEY = "gitfit_regimen";
 const V2_KEY = "gitfit_regimen_v2";
 
+// Full day names (matches your setup)
+const DAY_KEYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Unassigned"];
+
 const DEFAULT_PLAN = () => ({
   id: `plan_${Math.random().toString(36).slice(2, 9)}`,
   name: "My Plan",
-  days: Object.fromEntries(DAY_KEYS.map((k) => [k, []])),
+  days: {
+    Monday: [],
+    Tuesday: [],
+    Wednesday: [],
+    Thursday: [],
+    Friday: [],
+    Saturday: [],
+    Sunday: [],
+    Unassigned: [],
+  },
 });
 
 // Map for migrating old short keys → full names
@@ -72,10 +81,9 @@ function readStore() {
         return fixed;
       }
     }
-  } catch (e) {
-    if (import.meta?.env?.DEV) console.warn("regimen v2 parse failed:", e);
+  } catch {
+    // ignore errors
   }
-
   // Try old v1 (one-plan object with day arrays)
   try {
     const rawV1 = localStorage.getItem(V1_KEY);
@@ -83,7 +91,7 @@ function readStore() {
       const v1 = JSON.parse(rawV1);
       let plan = DEFAULT_PLAN();
       if (v1 && typeof v1 === "object") {
-        // Copy any known full keys over
+        // Copy any known keys over, then migrate if they’re short
         for (const k of Object.keys(plan.days)) {
           if (Array.isArray(v1[k])) plan.days[k] = v1[k];
         }
@@ -100,10 +108,9 @@ function readStore() {
       localStorage.setItem(V2_KEY, JSON.stringify(migrated));
       return migrated;
     }
-  } catch (e) {
-    if (import.meta?.env?.DEV) console.warn("regimen v1 parse failed:", e);
+  } catch {
+    // ignore errors
   }
-
   // Fresh
   const plan = DEFAULT_PLAN();
   const fresh = { plans: [plan], activeId: plan.id };
@@ -111,17 +118,17 @@ function readStore() {
   return fresh;
 }
 function writeStore(obj) {
-  try {
-    localStorage.setItem(V2_KEY, JSON.stringify(obj));
-  } catch (e) {
-    console.error("regimen: failed to write store:", e);
-  }
+  localStorage.setItem(V2_KEY, JSON.stringify(obj));
   return obj;
 }
 
 export default function Regimen() {
   const [store, setStore] = useState(() => readStore());
   const [preview, setPreview] = useState(null); // {slug, id}
+
+  // 🔹 DnD state
+  const [dragData, setDragData] = useState(null); // { fromDay, fromIndex }
+  const [dragOver, setDragOver] = useState(null); // { day, index } or { day, index: 'end' }
 
   const activePlan = useMemo(() => {
     const p = store.plans.find((p) => p.id === store.activeId);
@@ -181,7 +188,8 @@ export default function Regimen() {
       const toArr = Array.isArray(p.days[toDay]) ? p.days[toDay].slice() : [];
       const [item] = fromArr.splice(idx, 1);
       if (!item) return p;
-      toArr.splice(toIndex, 0, item);
+      const insertAt = Math.max(0, Math.min(toIndex, toArr.length));
+      toArr.splice(insertAt, 0, item);
       p.days[fromDay] = fromArr;
       p.days[toDay] = toArr;
       return p;
@@ -218,6 +226,23 @@ export default function Regimen() {
       return p;
     });
   };
+
+  // ---------- UPDATED: keep target fields as strings while typing ----------
+  const updateTargets = (day, idx, patch) =>
+    setActivePlan((p) => {
+      const arr = Array.isArray(p.days[day]) ? p.days[day].slice() : [];
+      if (!arr[idx]) return p;
+
+      const norm = { ...patch };
+      // Always store strings ('' allowed) so inputs stay controlled during typing
+      if ("sets"   in norm) norm.sets   = norm.sets   == null ? "" : String(norm.sets);
+      if ("reps"   in norm) norm.reps   = norm.reps   == null ? "" : String(norm.reps);
+      if ("weight" in norm) norm.weight = norm.weight == null ? "" : String(norm.weight);
+
+      arr[idx] = { ...arr[idx], ...norm };
+      p.days[day] = arr;
+      return p;
+    });
 
   // ============================================================
   //        RANDOMIZER (PPL + Powerlifting + Calisthenics)
@@ -263,6 +288,10 @@ export default function Regimen() {
           name: ex.name,
           category: type,
           difficulty: diff,
+          // start empty targets so inputs render cleanly
+          sets: "",
+          reps: "",
+          weight: "",
         });
       }
     }
@@ -289,12 +318,19 @@ export default function Regimen() {
         const key = `${it.slug}:${it.id}`;
         return skipDup ? !existing.has(key) : true;
       });
-      p.days[day] = toTop ? [...incoming, ...arr] : [...arr, ...incoming];
+      // Ensure targets are strings
+      const primed = incoming.map((it) => ({
+        ...it,
+        sets: it.sets ?? "",
+        reps: it.reps ?? "",
+        weight: it.weight ?? "",
+      }));
+      p.days[day] = toTop ? [...primed, ...arr] : [...arr, ...primed];
       return p;
     });
   }
 
-  // ✅ Use full day name as default now
+  // Quick fill controls
   const [qfDay, setQfDay] = useState("Monday");
   const [qfType, setQfType] = useState("Push");
   const [qfSkipDup, setQfSkipDup] = useState(true);
@@ -350,13 +386,44 @@ export default function Regimen() {
     alert("Filled a 6-day Calisthenics-focused cycle (Cal/Pull/Legs x2).");
   };
 
+  // ---------- DnD handlers ----------
+  const onDragStart = (fromDay, fromIndex) => {
+    setDragData({ fromDay, fromIndex });
+  };
+  const onDragOverItem = (e, day, index) => {
+    e.preventDefault(); // allow drop
+    setDragOver({ day, index });
+  };
+  const onDragOverListEnd = (e, day) => {
+    e.preventDefault(); // allow drop
+    setDragOver({ day, index: "end" });
+  };
+  const onDropItem = (day, index) => {
+    if (!dragData) return;
+    const { fromDay, fromIndex } = dragData;
+    let toIndex = index;
+    if (fromDay === day && fromIndex < index) {
+      toIndex = Math.max(0, index - 1);
+    }
+    moveItem(fromDay, fromIndex, day, toIndex);
+    setDragData(null);
+    setDragOver(null);
+  };
+  const onDropListEnd = (day) => {
+    if (!dragData) return;
+    const { fromDay, fromIndex } = dragData;
+    const endIndex = (activePlan.days[day] || []).length;
+    moveItem(fromDay, fromIndex, day, endIndex);
+    setDragData(null);
+    setDragOver(null);
+  };
+
   // ---------- rendering ----------
   return (
     <div className="regimen container">
       <header className="reg-header">
         <div className="reg-title">
           <h1>Training Regimen</h1>
-          <p className="sub">Organize your workouts by day — or use the quick generators to get started fast.</p>
         </div>
 
         <div className="reg-planbar">
@@ -429,6 +496,17 @@ export default function Regimen() {
             onRemove={(idx) => removeItem(day, idx)}
             onClear={() => clearDay(day)}
             onDetails={(it) => setPreview({ slug: it.slug, id: it.id })}
+
+            // DnD props
+            dragOver={dragOver}
+            onDragStart={(i) => onDragStart(day, i)}
+            onDragOverItem={(i, e) => onDragOverItem(e, day, i)}
+            onDragOverListEnd={(e) => onDragOverListEnd(e, day)}
+            onDropItem={(i) => onDropItem(day, i)}
+            onDropListEnd={() => onDropListEnd(day)}
+
+            // Targets
+            onTargetsChange={(i, patch) => updateTargets(day, i, patch)}
           />
         ))}
       </section>
@@ -456,7 +534,21 @@ function DayColumn({
   onRemove,
   onClear,
   onDetails,
+  // DnD
+  dragOver,
+  onDragStart,
+  onDragOverItem,
+  onDragOverListEnd,
+  onDropItem,
+  onDropListEnd,
+  // Targets
+  onTargetsChange,
 }) {
+  const isListDragOver = dragOver && dragOver.day === label && dragOver.index === "end";
+
+  // keep only digits & dot; return strings so inputs stay controlled
+  const onNum = (v) => (v === "" ? "" : String(v).replace(/[^\d.]/g, ""));
+
   return (
     <div className="reg-col">
       <div className="reg-col-head">
@@ -469,49 +561,103 @@ function DayColumn({
         </button>
       </div>
 
-      <ol className="reg-col-list">
+      <ol
+        className={`reg-col-list ${isListDragOver ? "drag-over" : ""}`}
+        onDragOver={(e) => onDragOverListEnd(e)}
+        onDrop={onDropListEnd}
+      >
         {items.length === 0 ? (
           <li className="empty">No exercises</li>
         ) : (
-          items.map((it, i) => (
-            <li key={`${it.slug}:${it.id}:${i}`} className="ex-card">
-              {/* Header: Name + Difficulty */}
-              <div className="ex-head">
-                <div className="ex-name">{it.name}</div>
-                {it.difficulty && (
-                  <span className={`tag diff-${String(it.difficulty).toLowerCase()}`}>
-                    {it.difficulty}
-                  </span>
-                )}
-              </div>
+          items.map((it, i) => {
+            const isCardDragOver =
+              dragOver && dragOver.day === label && dragOver.index === i;
 
-              {/* Subline: Category/slug */}
-              <div className="ex-sub">
-                <span className="muted">{it.category || it.slug}</span>
-              </div>
+            const sets = it.sets ?? "";
+            const reps = it.reps ?? "";
+            const weight = it.weight ?? "";
 
-              {/* Actions row */}
-              <div className="ex-actions">
-                <button className="icon" onClick={() => onDetails(it)} title="Details" aria-label="Details">
-                  Details
-                </button>
-                <button className="icon" onClick={() => onUp(i)} title="Move up" aria-label="Move up">↑</button>
-                <button className="icon" onClick={() => onDown(i)} title="Move down" aria-label="Move down">↓</button>
-                <button className="icon" onClick={() => onMovePrev(i)} title="Move to previous day" aria-label="Move to previous day">◀</button>
-                <button className="icon" onClick={() => onMoveNext(i)} title="Move to next day" aria-label="Move to next day">▶</button>
-                <select
-                  className="mini"
-                  onChange={(e) => { if (e.target.value) onMoveTo(i, e.target.value); e.target.value = ""; }}
-                  defaultValue=""
-                  aria-label="Move to another day"
-                >
-                  <option value="" disabled>Move to…</option>
-                  {DAY_KEYS.map((d) => <option key={d} value={d}>{d}</option>)}
-                </select>
-                <button className="icon danger" onClick={() => onRemove(i)} title="Remove" aria-label="Remove">✕</button>
-              </div>
-            </li>
-          ))
+            return (
+              <li
+                key={`${it.slug}:${it.id}:${i}`}
+                className={`ex-card ${isCardDragOver ? "drag-over" : ""}`}
+                draggable
+                onDragStart={() => onDragStart(i)}
+                onDragOver={(e) => onDragOverItem(i, e)}
+                onDrop={() => onDropItem(i)}
+              >
+                {/* Header: Name + Difficulty */}
+                <div className="ex-head">
+                  <div className="ex-name">{it.name}</div>
+                  {it.difficulty && (
+                    <span className={`tag diff-${String(it.difficulty).toLowerCase()}`}>
+                      {it.difficulty}
+                    </span>
+                  )}
+                </div>
+
+                {/* Subline: Category/slug */}
+                <div className="ex-sub">
+                  <span className="muted">{it.category || it.slug}</span>
+                </div>
+
+                {/* Targets */}
+                <div className="ex-targets">
+                  <label>
+                    <span>Sets</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={sets}
+                      onChange={(e) => onTargetsChange(i, { sets: onNum(e.target.value) })}
+                      placeholder="e.g., 3"
+                    />
+                  </label>
+                  <label>
+                    <span>Reps</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={reps}
+                      onChange={(e) => onTargetsChange(i, { reps: onNum(e.target.value) })}
+                      placeholder="e.g., 8"
+                    />
+                  </label>
+                  <label>
+                    <span>Weight</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={weight}
+                      onChange={(e) => onTargetsChange(i, { weight: onNum(e.target.value) })}
+                      placeholder="lb"
+                    />
+                  </label>
+                </div>
+
+                {/* Actions row */}
+                <div className="ex-actions">
+                  <button className="icon" onClick={() => onDetails(it)} title="Details" aria-label="Details">
+                    Details
+                  </button>
+                  <button className="icon" onClick={() => onUp(i)} title="Move up" aria-label="Move up">↑</button>
+                  <button className="icon" onClick={() => onDown(i)} title="Move down" aria-label="Move down">↓</button>
+                  <button className="icon" onClick={() => onMovePrev(i)} title="Move to previous day" aria-label="Move to previous day">◀</button>
+                  <button className="icon" onClick={() => onMoveNext(i)} title="Move to next day" aria-label="Move to next day">▶</button>
+                  <select
+                    className="mini"
+                    onChange={(e) => { if (e.target.value) onMoveTo(i, e.target.value); e.target.value = ""; }}
+                    defaultValue=""
+                    aria-label="Move to another day"
+                  >
+                    <option value="" disabled>Move to…</option>
+                    {DAY_KEYS.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <button className="icon danger" onClick={() => onRemove(i)} title="Remove" aria-label="Remove">✕</button>
+                </div>
+              </li>
+            );
+          })
         )}
       </ol>
     </div>

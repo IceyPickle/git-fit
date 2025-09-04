@@ -1,6 +1,6 @@
 /* src/pages/Profile/Profile.css */
 
-.profile-page .sub { color: var(--text-dim); margin-top: 6px; }
+.profile .sub { color: var(--text-dim); margin-top: 6px; }
 
 .section { margin-top: 28px; }
 .section-head h2 { margin: 0; font-size: 20px; }
@@ -99,7 +99,7 @@
 
 .profile-notes { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
 .notes-groups { display: grid; gap: 16px; }
-.notes-group { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); padding: 12px; }
+.notes-group { border: 1px solid var(--border); border-radius: 12px; background: #0f1015; padding: 12px; }
 .notes-group-head { display: flex; justify-content: space-between; align-items: baseline; }
 .notes-group-head h3 { margin: 0; }
 .group-sub { font-size: 12px; color: var(--text-dim); }

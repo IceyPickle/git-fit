@@ -18,11 +18,9 @@ import { getExercises } from "../../data/exercises";
 export default function Profile() {
   const { user } = useAuth();
 
-  // Load notes once on mount
   const initial = useMemo(() => listAllNotes(), []);
   const [notes, setNotes] = useState(initial);
 
-  // Group by exercise key
   const byExercise = useMemo(() => {
     const map = new Map();
     for (const n of notes) {
@@ -30,15 +28,13 @@ export default function Profile() {
       arr.push(n);
       map.set(n.key, arr);
     }
-    // newest-first inside each group
     for (const [k, arr] of map.entries()) {
       arr.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       map.set(k, arr);
     }
-    return Array.from(map.entries()); // [ [key, notes[]], ... ]
+    return Array.from(map.entries());
   }, [notes]);
 
-  // CSV export/import
   const fileRef = useRef(null);
   const exportAllCSV = () => {
     const csv = notesToCSV(notes);
@@ -64,7 +60,6 @@ export default function Profile() {
         e.target.value = "";
         return;
       }
-      // Merge strategy: change to "replaceAll" or "skipDuplicates" if you prefer.
       const merged = importNotes(rows, { strategy: "append" });
       setNotes(merged);
       alert(`Imported ${rows.length} note(s).`);
@@ -76,7 +71,6 @@ export default function Profile() {
     }
   };
 
-  // Inline edit state (one note at a time)
   const [editId, setEditId] = useState(null);
   const [eText, setEText] = useState("");
   const [eWeight, setEWeight] = useState("");
@@ -169,42 +163,20 @@ export default function Profile() {
                               <time>{new Date(n.createdAt).toLocaleString()}</time>
                               {n.updatedAt && <span className="note-stats"> · edited {new Date(n.updatedAt).toLocaleString()}</span>}
                             </div>
-
                             <div className="note-grid">
                               <label><span>Weight (lb)</span>
-                                <input
-                                  type="number"
-                                  inputMode="decimal"
-                                  value={eWeight}
-                                  onChange={(e) => setEWeight(e.target.value)}
-                                />
+                                <input type="number" inputMode="decimal" value={eWeight} onChange={(e) => setEWeight(e.target.value)} />
                               </label>
                               <label><span>Reps</span>
-                                <input
-                                  type="number"
-                                  inputMode="numeric"
-                                  value={eReps}
-                                  onChange={(e) => setEReps(e.target.value)}
-                                />
+                                <input type="number" inputMode="numeric" value={eReps} onChange={(e) => setEReps(e.target.value)} />
                               </label>
                               <label><span>Sets</span>
-                                <input
-                                  type="number"
-                                  inputMode="numeric"
-                                  value={eSets}
-                                  onChange={(e) => setESets(e.target.value)}
-                                />
+                                <input type="number" inputMode="numeric" value={eSets} onChange={(e) => setESets(e.target.value)} />
                               </label>
                             </div>
-
                             <label className="note-text"><span>Notes</span>
-                              <textarea
-                                rows={3}
-                                value={eText}
-                                onChange={(e) => setEText(e.target.value)}
-                              />
+                              <textarea rows={3} value={eText} onChange={(e) => setEText(e.target.value)} />
                             </label>
-
                             <div className="note-row-actions">
                               <button className="btn primary" onClick={() => saveEdit(n.id)}>Save</button>
                               <button className="btn" onClick={cancelEdit} type="button">Cancel</button>
@@ -243,7 +215,6 @@ export default function Profile() {
   );
 }
 
-/* util: blob download */
 function downloadBlob(text, filename) {
   const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
