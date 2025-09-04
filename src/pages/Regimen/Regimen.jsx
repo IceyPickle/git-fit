@@ -1,6 +1,6 @@
 /* src/pages/Regimen/Regimen.jsx */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import "./Regimen.css";
 import { getExercises } from "../../data/exercises";
@@ -122,6 +122,124 @@ function writeStore(obj) {
   return obj;
 }
 
+// ---------- CSV helpers (export/import) ----------
+const csvEscape = (v) => {
+  const s = v == null ? "" : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+function storeToCSV(store) {
+  const header = [
+    "planId","planName","day","slug","exerciseId","name","category","difficulty","sets","reps","weight",
+  ];
+  const rows = [header.join(",")];
+
+  for (const p of store.plans) {
+    const plan = normalizePlanDays(migrateDayKeys(p));
+    for (const day of DAY_KEYS) {
+      const list = plan.days[day] || [];
+      for (const it of list) {
+        rows.push([
+          csvEscape(plan.id),
+          csvEscape(plan.name),
+          csvEscape(day),
+          csvEscape(it.slug),
+          csvEscape(it.id),
+          csvEscape(it.name),
+          csvEscape(it.category ?? ""),
+          csvEscape(it.difficulty ?? ""),
+          csvEscape(it.sets ?? ""),
+          csvEscape(it.reps ?? ""),
+          csvEscape(it.weight ?? ""),
+        ].join(","));
+      }
+    }
+  }
+  return rows.join("\n");
+}
+
+// minimal CSV line splitter (quote-aware)
+function splitCSVLine(line) {
+  const out = [];
+  let cur = "";
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQ) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') { inQ = false; }
+      else cur += ch;
+    } else {
+      if (ch === '"') inQ = true;
+      else if (ch === ',') { out.push(cur); cur = ""; }
+      else cur += ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+function parseRegimenCSV(text) {
+  const lines = String(text || "").split(/\r?\n/).filter(l => l.trim().length > 0);
+  if (lines.length === 0) {
+    return { plans: [], errors: ["CSV is empty."] };
+  }
+
+  const header = splitCSVLine(lines[0]).map(h => h.trim());
+  const need = ["planId","planName","day","slug","exerciseId","name","category","difficulty","sets","reps","weight"];
+  const index = (name) => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
+  const idx = Object.fromEntries(need.map(n => [n, index(n)]));
+  if (idx.planId < 0 || idx.planName < 0 || idx.day < 0 || idx.slug < 0 || idx.exerciseId < 0 || idx.name < 0) {
+    return { plans: [], errors: ['CSV must include headers: planId, planName, day, slug, exerciseId, name (case-insensitive).'] };
+  }
+
+  const groups = new Map(); // key: planName -> {id, name, days}
+  const ERR = [];
+
+  for (let li = 1; li < lines.length; li++) {
+    const cols = splitCSVLine(lines[li]);
+    const get = (k) => (idx[k] >= 0 && idx[k] < cols.length ? cols[idx[k]] : "");
+    const planId = get("planId").trim();
+    const planName = get("planName").trim() || "Imported Plan";
+    const day = get("day").trim();
+    const slug = get("slug").trim();
+    const exerciseId = get("exerciseId").trim();
+    const name = get("name").trim();
+
+    if (!DAY_KEYS.includes(day)) {
+      ERR.push(`Line ${li + 1}: invalid day "${day}".`);
+      continue;
+    }
+    if (!slug || !exerciseId || !name) {
+      ERR.push(`Line ${li + 1}: missing slug/exerciseId/name.`);
+      continue;
+    }
+
+    const category = (get("category") || "").trim();
+    const difficulty = (get("difficulty") || "").trim();
+    // keep as strings so inputs stay controlled
+    const sets = (get("sets") || "").trim();
+    const reps = (get("reps") || "").trim();
+    const weight = (get("weight") || "").trim();
+
+    const key = planName.toLowerCase();
+    if (!groups.has(key)) {
+      groups.set(key, {
+        id: planId || `plan_${Math.random().toString(36).slice(2, 9)}`,
+        name: planName,
+        days: {
+          Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [], Unassigned: [],
+        },
+      });
+    }
+    groups.get(key).days[day].push({ slug, id: exerciseId, name, category, difficulty, sets, reps, weight });
+  }
+
+  // normalize & array-ify
+  const plans = Array.from(groups.values()).map(normalizePlanDays);
+  return { plans, errors: ERR };
+}
+
 export default function Regimen() {
   const [store, setStore] = useState(() => readStore());
   const [preview, setPreview] = useState(null); // {slug, id}
@@ -129,6 +247,9 @@ export default function Regimen() {
   // 🔹 DnD state
   const [dragData, setDragData] = useState(null); // { fromDay, fromIndex }
   const [dragOver, setDragOver] = useState(null); // { day, index } or { day, index: 'end' }
+
+  // 🔹 Import (CSV) file input
+  const fileRef = useRef(null);
 
   const activePlan = useMemo(() => {
     const p = store.plans.find((p) => p.id === store.activeId);
@@ -227,14 +348,13 @@ export default function Regimen() {
     });
   };
 
-  // ---------- UPDATED: keep target fields as strings while typing ----------
+  // ---------- keep target fields as strings while typing ----------
   const updateTargets = (day, idx, patch) =>
     setActivePlan((p) => {
       const arr = Array.isArray(p.days[day]) ? p.days[day].slice() : [];
       if (!arr[idx]) return p;
 
       const norm = { ...patch };
-      // Always store strings ('' allowed) so inputs stay controlled during typing
       if ("sets"   in norm) norm.sets   = norm.sets   == null ? "" : String(norm.sets);
       if ("reps"   in norm) norm.reps   = norm.reps   == null ? "" : String(norm.reps);
       if ("weight" in norm) norm.weight = norm.weight == null ? "" : String(norm.weight);
@@ -418,6 +538,66 @@ export default function Regimen() {
     setDragOver(null);
   };
 
+  // ---------- Export / Import (CSV) ----------
+  const onExportCSV = () => {
+    try {
+      const csv = storeToCSV(store);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "gitfit-regimen.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to export regimen CSV.");
+    }
+  };
+
+  const onClickImport = () => fileRef.current?.click();
+
+  const onImportFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const { plans: incomingPlans, errors } = parseRegimenCSV(text);
+      if (errors?.length) {
+        alert("CSV issues:\n" + errors.join("\n"));
+      }
+      if (!incomingPlans.length) {
+        alert("No valid rows found.");
+        e.target.value = "";
+        return;
+      }
+
+      // Ensure unique ids vs existing
+      const existingIds = new Set(store.plans.map((p) => p.id));
+      const normalizedIncoming = incomingPlans.map((p) => {
+        let id = p.id && typeof p.id === "string" ? p.id : `plan_${Math.random().toString(36).slice(2, 9)}`;
+        if (existingIds.has(id)) id = `plan_${Math.random().toString(36).slice(2, 9)}`;
+        return normalizePlanDays({ ...p, id });
+      });
+
+      const next = {
+        activeId: store.activeId, // keep the same active plan
+        plans: [...store.plans, ...normalizedIncoming],
+      };
+
+      writeStore(next);
+      setStore(next);
+      alert(`Imported ${normalizedIncoming.length} plan(s) from CSV.`);
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || "Failed to import regimen CSV.");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
   // ---------- rendering ----------
   return (
     <div className="regimen container">
@@ -447,6 +627,19 @@ export default function Regimen() {
             <button className="btn danger" onClick={onDeletePlan}>Delete</button>
             <button className="btn" onClick={clearPlan}>Clear Plan</button>
           </div>
+        </div>
+
+        {/* CSV Export / Import */}
+        <div className="plan-actions" style={{ flexWrap: "wrap", gap: 8 }}>
+          <button className="btn" onClick={onExportCSV}>Export plan(s) (CSV)</button>
+          <button className="btn" onClick={onClickImport}>Import plan(s) (CSV)</button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,text/csv"
+            style={{ display: "none" }}
+            onChange={onImportFile}
+          />
         </div>
 
         {/* QUICK FILL */}
