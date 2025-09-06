@@ -78,7 +78,9 @@ export function readStore() {
         return writeStore({ ...parsed, plans: migratedPlans });
       }
     }
-  } catch {}
+  } catch {
+    // Ignore errors reading V2 store
+  }
 
   // Try migrate V1 -> V2
   try {
@@ -100,7 +102,9 @@ export function readStore() {
       plan = migrateDayKeys(plan);
       return writeStore({ plans: [plan], activeId: plan.id });
     }
-  } catch {}
+  } catch {
+    // Intentionally ignore errors reading V1 store
+  }
 
   // Fresh
   const plan = DEFAULT_PLAN();

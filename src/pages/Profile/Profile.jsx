@@ -1,6 +1,6 @@
 /* src/pages/Profile/Profile.jsx */
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useCallback } from "react";
 import "./Profile.css";
 
 import { useAuth } from "../../hooks/useAuth";
@@ -39,7 +39,7 @@ export default function Profile() {
     n.weight != null || n.reps != null || n.sets != null;
 
   // Note-level sort
-  const noteSortCmp = (a, b) => {
+  const noteSortCmp = useCallback((a, b) => {
     if (sortBy === "newest") return (b.createdAt || 0) - (a.createdAt || 0);
     if (sortBy === "oldest") return (a.createdAt || 0) - (b.createdAt || 0);
     if (sortBy === "weight") return (b.weight ?? -Infinity) - (a.weight ?? -Infinity);
@@ -47,7 +47,7 @@ export default function Profile() {
     if (sortBy === "sets")   return (b.sets   ?? -Infinity) - (a.sets   ?? -Infinity);
     // "exercise" is handled at group level; keep notes newest-first there
     return (b.createdAt || 0) - (a.createdAt || 0);
-  };
+  }, [sortBy]);
 
   // Build filtered+sorted groups
   const groups = useMemo(() => {
@@ -92,14 +92,14 @@ export default function Profile() {
     }
 
     return grouped; // [ [key, notes[]], ... ]
-  }, [notes, query, onlyNumeric, sortBy]);
+  }, [notes, query, onlyNumeric, sortBy, noteSortCmp]);
 
   // ---------- CSV export / import ----------
   const fileRef = useRef(null);
 
   const exportAllCSV = () => {
     // export only currently visible notes
-    const visible = groups.flatMap(([_, arr]) => arr);
+    const visible = groups.flatMap(([, arr]) => arr);
     const csv = notesToCSV(visible);
     downloadBlob(csv, "gitfit-notes.csv");
   };
