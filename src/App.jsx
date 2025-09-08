@@ -18,6 +18,9 @@ import AuthProvider from "./context/AuthProvider";
 import { useAuth } from "./hooks/useAuth";
 import "./App.css";
 
+// ⬇️ NEW: Suggestion bubble
+import SuggestionBubble from "./components/SuggestionBubble/SuggestionBubble";
+
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -67,6 +70,9 @@ export default function App() {
           </Routes>
         </main>
         <Footer />
+
+        {/* ⬇️ NEW: Global floating suggestion bubble */}
+        <SuggestionBubble />
       </div>
     </AuthProvider>
   );

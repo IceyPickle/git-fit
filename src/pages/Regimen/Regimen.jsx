@@ -373,6 +373,8 @@ export default function Regimen() {
     Legs: ["legs", "abs"],
     Powerlifting: ["powerlifting"],
     Calisthenics: ["calisthenics"],
+    CrossFit: ["crossfit"],
+    "At Home": ["home"],
   };
 
   const DIFFS = ["Beginner", "Intermediate", "Advanced"];
@@ -505,6 +507,35 @@ export default function Regimen() {
     }
     alert("Filled a 6-day Calisthenics-focused cycle (Cal/Pull/Legs x2).");
   };
+
+  const onFillCrossFitCycle = () => {
+    const order = ["CrossFit", "CrossFit", "CrossFit", "CrossFit", "CrossFit", "CrossFit"];
+    const startIdx = DAY_KEYS.indexOf(qfDay);
+    if (startIdx === -1) return;
+  
+    for (let i = 0; i < order.length; i++) {
+      const day = DAY_KEYS[(startIdx + i) % DAY_KEYS.length];
+      if (day === "Unassigned") continue;
+      const set = randomSetFor(order[i]);
+      if (set.length) addItemsToDay(day, set, { toTop: true, skipDup: qfSkipDup });
+    }
+    alert("Filled a 6-day CrossFit cycle (2/2/2 per day).");
+  };
+
+  const onFillHomeCycle = () => {
+    const order = ["At Home", "At Home", "At Home", "At Home", "At Home", "At Home"];
+    const startIdx = DAY_KEYS.indexOf(qfDay);
+    if (startIdx === -1) return;
+
+    for (let i = 0; i < order.length; i++) {
+      const day = DAY_KEYS[(startIdx + i) % DAY_KEYS.length];
+      if (day === "Unassigned") continue;
+      const set = randomSetFor(order[i]);
+      if (set.length) addItemsToDay(day, set, { toTop: true, skipDup: qfSkipDup });
+    }
+    alert("Filled a 6-day At-Home cycle (2/2/2 per day).");
+  };
+
 
   // ---------- DnD handlers ----------
   const onDragStart = (fromDay, fromIndex) => {
@@ -659,6 +690,8 @@ export default function Regimen() {
               <option>Legs</option>
               <option>Powerlifting</option>
               <option>Calisthenics</option>
+              <option>CrossFit</option>
+              <option>At Home</option>
             </select>
           </label>
 
@@ -671,6 +704,8 @@ export default function Regimen() {
           <button className="btn" onClick={onFillPPLCycle}>Fill 6-Day PPL Cycle</button>
           <button className="btn" onClick={onFillPowerliftingCycle}>Fill 6-Day PL Cycle</button>
           <button className="btn" onClick={onFillCalisthenicsCycle}>Fill 6-Day Calisthenics Cycle</button>
+          <button className="btn" onClick={onFillCrossFitCycle}>Fill 6-Day CrossFit Cycle</button>
+          <button className="btn" onClick={onFillHomeCycle}>Fill 6-Day At-Home Cycle</button>
         </div>
       </header>
 
