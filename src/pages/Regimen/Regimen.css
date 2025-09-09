@@ -188,3 +188,32 @@
   font-size: 12px;
 }
 .weight-row .mini:hover { background: #161722; }
+
+/* ===================== NEW: Calendar polish ===================== */
+
+/* Calendar bar */
+.calendar-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.calendar-bar .cal-left, .calendar-bar .cal-right { display: flex; gap: 8px; align-items: center; }
+
+/* Date chip in each column header */
+.datechip {
+  display: inline-grid; grid-template-columns: auto auto; align-items: center; gap: 6px;
+  padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px;
+  background: #101118; color: var(--text-dim); margin-right: 6px;
+}
+.datechip .wk { font-size: 12px; text-transform: uppercase; letter-spacing: .02em; }
+.datechip .dn { font-size: 14px; font-weight: 700; color: var(--text); }
+.datechip.today { border-color: #2f8f5b; box-shadow: 0 0 0 2px rgba(47, 143, 91, 0.25) inset; }
+
+/* Subtle focus styles */
+.select:focus, .btn:focus, .icon:focus, .mini:focus, .ex-targets input:focus {
+  outline: 2px solid #2f8f5b; outline-offset: 1px;
+}
+
+/* Scrollbar polish inside day lists */
+.reg-col-list::-webkit-scrollbar { height: 10px; width: 10px; }
+.reg-col-list::-webkit-scrollbar-thumb { background: #1d1e27; border-radius: 999px; border: 2px solid #0f1015; }
+.reg-col-list::-webkit-scrollbar-track { background: transparent; }

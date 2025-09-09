@@ -240,6 +240,25 @@ function parseRegimenCSV(text) {
   return { plans, errors: ERR };
 }
 
+/* ---------------- Week/date helpers (no deps) ---------------- */
+const WEEK_STARTS_ON = 1; // 1 = Monday, 0 = Sunday
+function startOfWeek(d = new Date(), weekStartsOn = WEEK_STARTS_ON) {
+  const x = new Date(d);
+  const day = x.getDay(); // 0..6
+  const diff = day < weekStartsOn ? -7 + (weekStartsOn - day) : weekStartsOn - day;
+  x.setDate(x.getDate() + diff);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function addDays(date, days) { const x = new Date(date); x.setDate(x.getDate() + days); return x; }
+function sameDay(a, b) {
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+function fmtDayLabel(date) {
+  return date.toLocaleDateString(undefined, { weekday: "short" }); // Mon, Tue...
+}
+function fmtNum(date) { return String(date.getDate()); }
+
 export default function Regimen() {
   const [store, setStore] = useState(() => readStore());
   const [preview, setPreview] = useState(null); // {slug, id}
@@ -365,7 +384,7 @@ export default function Regimen() {
     });
 
   // ============================================================
-  //        RANDOMIZER (PPL + Powerlifting + Calisthenics)
+  //        RANDOMIZER (PPL + Powerlifting + Calisthenics + CrossFit + Home)
   // ============================================================
   const TYPE_MAP = {
     Push: ["chest", "triceps"],
@@ -536,7 +555,6 @@ export default function Regimen() {
     alert("Filled a 6-day At-Home cycle (2/2/2 per day).");
   };
 
-
   // ---------- DnD handlers ----------
   const onDragStart = (fromDay, fromIndex) => {
     setDragData({ fromDay, fromIndex });
@@ -629,6 +647,13 @@ export default function Regimen() {
     }
   };
 
+  /* ---------------- Calendar UI state (visual only) ---------------- */
+  const [anchorDate, setAnchorDate] = useState(() => new Date());
+  const weekDates = useMemo(() => {
+    const start = startOfWeek(anchorDate, WEEK_STARTS_ON);
+    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  }, [anchorDate]);
+
   // ---------- rendering ----------
   return (
     <div className="regimen container">
@@ -707,14 +732,33 @@ export default function Regimen() {
           <button className="btn" onClick={onFillCrossFitCycle}>Fill 6-Day CrossFit Cycle</button>
           <button className="btn" onClick={onFillHomeCycle}>Fill 6-Day At-Home Cycle</button>
         </div>
+
+        {/* CALENDAR BAR */}
+        <div className="calendar-bar">
+          <div className="cal-left">
+            <button className="btn" onClick={() => setAnchorDate(addDays(anchorDate, -7))}>◀ Prev</button>
+            <button className="btn" onClick={() => setAnchorDate(new Date())}>Today</button>
+            <button className="btn" onClick={() => setAnchorDate(addDays(anchorDate, 7))}>Next ▶</button>
+          </div>
+          <div className="cal-right">
+            <span className="muted">
+              Week of{" "}
+              <strong>
+                {startOfWeek(anchorDate, WEEK_STARTS_ON).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+              </strong>
+            </span>
+          </div>
+        </div>
       </header>
 
       {/* GRID */}
       <section className="reg-grid">
-        {DAY_KEYS.map((day) => (
+        {DAY_KEYS.slice(0, 7).map((day, i) => (
           <DayColumn
             key={day}
             label={day}
+            date={weekDates[i]}
+            isToday={sameDay(weekDates[i], new Date())}
             items={activePlan.days[day] || []}
             onMovePrev={(idx) => moveItem(day, idx, prevDay(day), 0)}
             onMoveNext={(idx) => moveItem(day, idx, nextDay(day), 0)}
@@ -737,6 +781,32 @@ export default function Regimen() {
             onTargetsChange={(i, patch) => updateTargets(day, i, patch)}
           />
         ))}
+
+        {/* Unassigned column keeps working, just without a date chip */}
+        <DayColumn
+          key="Unassigned"
+          label="Unassigned"
+          items={activePlan.days["Unassigned"] || []}
+          onMovePrev={(idx) => moveItem("Unassigned", idx, prevDay("Unassigned"), 0)}
+          onMoveNext={(idx) => moveItem("Unassigned", idx, nextDay("Unassigned"), 0)}
+          onMoveTo={(idx, targetDay) => moveItem("Unassigned", idx, targetDay, 0)}
+          onUp={(idx) => reorderItem("Unassigned", idx, -1)}
+          onDown={(idx) => reorderItem("Unassigned", idx, +1)}
+          onRemove={(idx) => removeItem("Unassigned", idx)}
+          onClear={() => clearDay("Unassigned")}
+          onDetails={(it) => setPreview({ slug: it.slug, id: it.id })}
+
+          // DnD
+          dragOver={dragOver}
+          onDragStart={(i) => onDragStart("Unassigned", i)}
+          onDragOverItem={(i, e) => onDragOverItem(e, "Unassigned", i)}
+          onDragOverListEnd={(e) => onDragOverListEnd(e, "Unassigned")}
+          onDropItem={(i) => onDropItem("Unassigned", i)}
+          onDropListEnd={() => onDropListEnd("Unassigned")}
+
+          // Targets
+          onTargetsChange={(i, patch) => updateTargets("Unassigned", i, patch)}
+        />
       </section>
 
       {/* Details Modal */}
@@ -753,6 +823,8 @@ export default function Regimen() {
 
 function DayColumn({
   label,
+  date,         // optional (no date for Unassigned)
+  isToday,      // optional
   items,
   onMovePrev,
   onMoveNext,
@@ -777,10 +849,18 @@ function DayColumn({
   // keep only digits & dot; return strings so inputs stay controlled
   const onNum = (v) => (v === "" ? "" : String(v).replace(/[^\d.]/g, ""));
 
+  const dateBadge = date ? (
+    <div className={`datechip ${isToday ? "today" : ""}`}>
+      <span className="wk">{fmtDayLabel(date)}</span>
+      <span className="dn">{fmtNum(date)}</span>
+    </div>
+  ) : null;
+
   return (
     <div className="reg-col">
       <div className="reg-col-head">
         <div className="reg-col-title">
+          {dateBadge}
           <h3>{label}</h3>
           <span className="pill">{items.length}</span>
         </div>
